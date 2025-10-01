@@ -2,12 +2,12 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Category(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(null=True, blank=True)
 
 class Brand(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(null=True, blank=True)
 
 class Product(models.Model):
     class DiscountType(models.TextChoices):
@@ -51,7 +51,7 @@ class DiscountCode(models.Model):
     class CodeType(models.TextChoices):
         PERCENT = "PERCENT", "ลดตามเปอร์เซ็นต์"
         FIXED = "FIXED", "ลดตามจำนวนเงิน"
-    code = models.CharField(max_length=50)
+    code = models.CharField(max_length=50, unique=True)
     code_type = models.CharField(max_length=8, choices=CodeType.choices)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     start_date = models.DateTimeField()

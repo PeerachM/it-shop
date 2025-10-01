@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+        body {
+            font-family: "Prompt", sans-serif;
+        }
+    </style>
+    <title>
+        {% block title %} Title {% endblock %}
+    </title>
+</head>
+
+<body>
+    <div class="flex flex-col justify-between fixed w-60 h-screen top-0 left-0 z-40 shadow-sm">
+        <div>
+
+            <div class="py-6 px-6 hover:cursor-pointer border-b-1 border-gray-200">
+                <h1 class="text-3xl font-semibold text-purple-700">ITShop<span
+                        class="text-sm font-light text-yellow-600 ms-1">/admin</span></h1>
+            </div>
+
+            <div class="flex flex-col px-3 py-6 gap-3">
+                <a href="{% url 'home' %}">
+                    {% block home_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
+                        <i class="fa-solid fa-house me-2"></i>
+                        <span class="font-regular">หน้าหลัก</span>
+                    </button>
+                    {% endblock %}
+                </a>
+                <a href="">
+                    {% block order_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
+                        <i class="fa-solid fa-file-invoice me-2"></i>
+                        <span class="font-regular">คำสั่งซื้อ</span>
+                    </button>
+                    {% endblock %}
+                </a>
+                <a href="">
+                    {% block product_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
+                        <i class="fa-solid fa-box-open me-2"></i>
+                        <span class="font-regular">สินค้า</span>
+                    </button>
+                    {% endblock %}
+                </a>
+                <a href="{% url 'category' %}">
+                    {% block category_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
+                        <i class="fa-solid fa-list me-2"></i>
+                        <span class="font-regular">หมวดหมู่</span>
+                    </button>
+                    {% endblock %}
+                </a>
+                <a href="">
+                    {% block brand_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
+                        <i class="fa-solid fa-tag me-2"></i>
+                        <span class="font-regular">แบรนด์</span>
+                    </button>
+                    {% endblock %}
+                </a>
+                <a href="">
+                    {% block code_button %}
+                    <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-100 hover:cursor-pointer">
+                        <i class="fa-solid fa-percent me-2"></i>
+                        <span class="font-regular">โค้ดส่วนลด</span>
+                    </button>
+                    {% endblock %}
+                </a>
+            </div>
+        </div>
+
+        <div class="px-3 py-6 border-t-1 border-gray-200">
+            <a href="">
+                <button
+                    class="w-full p-3 ps-4 rounded-md text-left hover:bg-red-100 hover:text-red-800 hover:cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket me-2"></i>
+                    <span class="font-regular">ออกจากระบบ</span>
+                </button>
+            </a>
+        </div>
+    </div>
+
+    <div class="flex flex-col items-center ml-60 bg-gray-50 h-screen">
+        <div class="w-14/15 mt-8 mb-4">
+            {% block head %}
+                <h1 class="text-2xl">หน้า....</h1>
+            {% endblock %}
+        </div>
+        <div class="w-14/15 bg-white rounded-md border border-gray-200">
+            {% block content %}
+                <h2 class="text-center mt-32">content....</h2>
+            {% endblock %}
+        </div>
+    </div>
+
+
+
+    {% block script %}
+    <script src="/"></script>
+    {% endblock %}
+</body>
+
+</html>
