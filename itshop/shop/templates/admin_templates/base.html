@@ -46,7 +46,7 @@
                     </button>
                     {% endblock %}
                 </a>
-                <a href="">
+                <a href="{% url 'product' %}">
                     {% block product_button %}
                     <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
                         <i class="fa-solid fa-box-open me-2"></i>
@@ -62,7 +62,7 @@
                     </button>
                     {% endblock %}
                 </a>
-                <a href="">
+                <a href="{% url 'brand' %}">
                     {% block brand_button %}
                     <button class="w-full p-3 ps-4 rounded-md text-left hover:bg-gray-50 hover:cursor-pointer">
                         <i class="fa-solid fa-tag me-2"></i>

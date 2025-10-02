@@ -1,0 +1,71 @@
+{% extends 'admin_templates/base.html' %}
+
+{% block title %} เพิ่มแบรนด์สินค้า - IT Shop {% endblock %}
+
+{% block brand_button %}
+<button
+  class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+  <i class="fa-solid fa-tag me-2"></i>
+  <span class="font-regular">แบรนด์</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex items-center gap-1">
+    <a href="{% url 'brand' %}">
+        <button type="button"
+            class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
+            <i class="fa-solid fa-angle-left text-sm"></i>
+        </button>
+    </a>
+    <h1 class="text-2xl ms-1 text-gray-600">เพิ่มแบรนด์สินค้า</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="px-12 py-10">
+    {{ form.non_field_errors }}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="py-3">
+            <label for="{{form.name.id_for_label  }}" class="block font-medium text-gray-700">ชื่อแบรนด์</label>
+            {{form.name}}
+            <div class="text-red-400 p-2">
+                <ul>
+                    {% for error in form.name.errors %}
+                    <li>
+                        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="py-3">
+            <label for="{{form.description.id_for_label  }}" class="block font-medium text-gray-700">รายละเอียด
+                (optional)</label>
+            {{form.description }}
+            <div class="text-red-400 p-2">
+                <ul>
+                    {% for error in form.description.errors %}
+                    <li>
+                        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="py-3 text-right">
+            <a href="{% url 'brand' %}">
+                <button type="button"
+                    class="border border-gray-300 hover:bg-gray-100 text-gray-400 px-6 py-2 rounded-md hover:cursor-pointer">
+                    ยกเลิก
+                </button>
+            </a>
+            <button type="submit"
+                class="bg-purple-700 hover:bg-purple-600 text-white px-12 py-2 rounded-md hover:cursor-pointer">
+                เพิ่ม
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
