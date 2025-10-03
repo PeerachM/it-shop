@@ -44,7 +44,7 @@
         -
         {% endif %}
       </td>
-      <td class="p-4">{{ brand.product_count }}</td>
+      <td class="p-4">{{ brand.product_count|intcomma }}</td>
       <td class="p-4">
         <a href="{% url 'brand_edit' brand.id %}">
           <button

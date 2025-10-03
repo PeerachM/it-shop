@@ -23,20 +23,41 @@ class AdminHomeView(View):
 # PRODUCT
 class ProductView(View):
     def get(self, request):
-        return redirect("home")
-        # products = Category.objects.all()
-        # context = {"products": products}
-        # return render(request, "admin_templates/product_list.html", context)
+        products = Product.objects.all()
+        context = {"products": products}
+        return render(request, "admin_templates/product_list.html", context)
 
 class CreateProductView(View):
     def get(self, request):
         product_form = ProductForm()
         context = {'form': product_form}
         return render(request, "admin_templates/product_create.html", context)
-
+    
+    def post(self, request):
+        product_form = ProductForm(request.POST, request.FILES)
+        if product_form.is_valid():
+            product_form.save()
+            return redirect("product")
+        context = {'form': product_form}
+        print(product_form.errors)
+        return render(request, "admin_templates/product_create.html", context)
+    
 class EditProductView(View):
-    def get(self, request):
-        return redirect("home")
+    def get(self, request, id):
+        product = Product.objects.get(id=id)
+        product_form = ProductForm(instance=product)
+        context = {'form': product_form}
+        return render(request, "admin_templates/product_edit.html", context)
+    
+    def post(self, request, id):
+        product = Product.objects.get(id=id)
+        product_form = ProductForm(request.POST, request.FILES, instance=product)
+        if product_form.is_valid():
+            product_form.save()
+            return redirect("product")
+        context = {'form': product_form}
+        print(product_form.errors)
+        return render(request, "admin_templates/product_edit.html", context)
 
 
 # CATEGORY

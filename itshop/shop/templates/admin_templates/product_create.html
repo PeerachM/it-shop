@@ -1,0 +1,195 @@
+{% extends 'admin_templates/base.html' %}
+{% load static %}
+
+{% block title %} เพิ่มสินค้าใหม่ - IT Shop {% endblock %}
+
+{% block product_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-box-open me-2"></i>
+    <span class="font-regular">สินค้า</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex items-center gap-1">
+    <a href="{% url 'product' %}">
+        <button type="button"
+            class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
+            <i class="fa-solid fa-angle-left text-sm"></i>
+        </button>
+    </a>
+    <h1 class="text-2xl ms-1 text-gray-600">เพิ่มสินค้า</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="px-12 py-10">
+    {{ form.non_field_errors }}
+    <form method="POST" enctype="multipart/form-data" class="py-3">
+        {% csrf_token %}
+
+        <div class="flex gap-5">
+            <div class="w-4/6 flex flex-col gap-5">
+                <div class="border border-gray-200 p-5 rounded-md">
+                    <div class="pt-3 pb-1">
+                        <label for="{{form.name.id_for_label  }}"
+                            class="block font-medium text-gray-700 mb-1">ชื่อสินค้า</label>
+                        {{form.name}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.name.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="pb-1">
+                        <label for="{{form.description.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">รายละเอียด</label>
+                        {{form.description}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.description.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex pb-1 gap-5 border border-gray-200 p-5 rounded-md">
+                    <div class="w-1/2">
+                        <label for="{{form.brand.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">แบรนด์</label>
+                        {{form.brand}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.brand.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="w-1/2">
+                        <label for="{{form.category.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">หมวดหมู่</label>
+                        {{form.category}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.category.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex pb-1 gap-5 border border-gray-200 p-5 rounded-md">
+                    <div class="w-2/4">
+                        <label for="{{form.price.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">ราคา</label>
+                        {{form.price}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.price.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="w-1/4">
+                        <label for="{{form.discount_value.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">จำนวนส่วนลด</label>
+                        {{form.discount_value}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.discount_value.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="w-1/4">
+                        <label for="{{form.discount_type.id_for_label}}"
+                            class="block font-medium text-gray-700 mb-1">ประเภทส่วนลด</label>
+                        {{form.discount_type}}
+                        <div class="text-red-400 p-2">
+                            <ul>
+                                {% for error in form.discount_type.errors %}
+                                <li>
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="pb-1 border border-gray-200 p-5 rounded-md">
+                    <label for="{{form.stock.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">จำนวนสินค้า</label>
+                    {{form.stock}}
+                    <div class="text-red-400 p-2">
+                        <ul>
+                            {% for error in form.stock.errors %}
+                            <li>
+                                <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+            <div class="w-2/6">
+                <div class="pt-3 flex flex-col items-center gap-5 border border-gray-200 p-5 rounded-md">
+                    <img id="preview" src="{% static 'img/no_img.jpeg' %}" alt=""
+                        class="object-cover w-128 h-96 rounded-md border border-gray-300">
+                    <label for="{{ form.image.id_for_label }}"
+                        class="inline-block border border-gray-500 rounded-md p-2 text-center text-gray-600 hover:border-gray-800 hover:text-gray-800 hover:cursor-pointer w-1/4">
+                        เลือกรูปภาพ
+                    </label>
+                </div>
+                {{form.image}}
+            </div>
+        </div>
+        <div class="py-3 text-right">
+            <a href="{% url 'product' %}">
+                <button type="button"
+                    class="border border-gray-300 hover:bg-gray-100 text-gray-400 px-6 py-2 rounded-md hover:cursor-pointer">
+                    ยกเลิก
+                </button>
+            </a>
+            <button type="submit"
+                class="bg-purple-700 hover:bg-purple-600 text-white px-12 py-2 rounded-md hover:cursor-pointer">
+                เพิ่ม
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const image = document.getElementById('{{form.image.id_for_label}}')
+    const preview = document.getElementById('preview')
+    image.addEventListener('change', () => {
+        const [file] = image.files
+        if (file) {
+            preview.src = URL.createObjectURL(file)
+            preview.classList.remove('hidden')
+        }
+    })
+</script>
+{% endblock %}

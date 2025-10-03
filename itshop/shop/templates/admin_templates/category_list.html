@@ -44,7 +44,7 @@
             -
         {% endif %}
       </td>
-      <td class="p-4">{{ category.product_count }}</td>
+      <td class="p-4">{{ category.product_count|intcomma }}</td>
       <td class="p-4">
         <a href="{% url 'category_edit' category.id %}">
             <button class="px-2 py-1 text-white bg-yellow-500 hover:bg-yellow-600/70 rounded-md text-sm hover:cursor-pointer">

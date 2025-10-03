@@ -21,20 +21,27 @@ class Product(models.Model):
         PERCENT = "PERCENT", "ลดตามเปอร์เซ็นต์"
         FIXED = "FIXED", "ลดตามจำนวนเงิน"
 
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=100)
-    description = models.TextField(null=True)
+    description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
-    image = models.FileField(upload_to="product_images/")
+    image = models.FileField(upload_to="product_images/", null=True, blank=True)
     discount_type = models.CharField(max_length=8, choices=DiscountType.choices, default=DiscountType.NONE)
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, default=0)
     is_active = models.BooleanField(default=True)
+
+    def sale_price(self):
+        if self.discount_type == "PERCENT":
+            return self.price * (1 - self.discount_value / 100)
+        elif self.discount_type == "FIXED":
+            return self.price - self.discount_value
+        return self.price
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=20, null=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
     image = models.FileField(upload_to="customer_images/", blank=True, null=True)
     wishlist = models.ManyToManyField(Product)
 
@@ -64,7 +71,7 @@ class DiscountCode(models.Model):
     end_date = models.DateTimeField(null=True)
     is_active = models.BooleanField(default=True)
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     usage_count = models.PositiveIntegerField(default=0)
 
 class Order(models.Model):
@@ -74,7 +81,7 @@ class Order(models.Model):
         DELIVERED = "DELIVERED", "จัดส่งสำเร็จ"
         CANCELLED = "CANCELLED", "ยกเลิกคำสั่งซื้อ"
     cutomer = models.OneToOneField(Customer, on_delete=models.CASCADE)
-    dicount_code = models.OneToOneField(DiscountCode, on_delete=models.PROTECT, null=True)
+    dicount_code = models.OneToOneField(DiscountCode, on_delete=models.PROTECT, null=True, blank=True)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_address = models.TextField()
     order_date = models.DateTimeField(auto_now_add=True)

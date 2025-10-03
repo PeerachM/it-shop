@@ -11,18 +11,17 @@ class CustomUserCreationForm(UserCreationForm):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = "__all__"
+        exclude = ['is_active']
         widgets = {
-            "category": Select(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "brand": Select(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "name": TextInput(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "description": Textarea(attrs={"rows": 2, "class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "price": NumberInput(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "stock": NumberInput(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
+            "category": Select(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "brand": Select(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "name": TextInput(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "description": Textarea(attrs={"rows": 3, "class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "price": NumberInput(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "stock": NumberInput(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
             "image": FileInput(attrs={"class": "hidden"}),
-            "discount_type": Select(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "discount_value": NumberInput(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
-            "is_active": CheckboxInput(attrs={"class": "border border-gray-200 p-3 w-full rounded-md"}),
+            "discount_type": Select(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
+            "discount_value": NumberInput(attrs={"class": "border border-gray-200 px-3 py-2 w-full rounded-md"}),
         }
 
 class CategoryForm(ModelForm):
@@ -31,11 +30,11 @@ class CategoryForm(ModelForm):
         fields = "__all__"
         widgets = {
             "name": TextInput(attrs={
-                "class": "border border-gray-200 p-3 w-full rounded-md"
+                "class": "border border-gray-200 px-3 py-2 w-full rounded-md"
                 }),
             "description": Textarea(attrs={
                     "rows": 2,
-                    "class": "border border-gray-200 p-3 w-full rounded-md"
+                    "class": "border border-gray-200 px-3 py-2 w-full rounded-md"
                 }),
         }
 
@@ -46,10 +45,10 @@ class BrandForm(ModelForm):
         fields = "__all__"
         widgets = {
             "name": TextInput(attrs={
-                "class": "border border-gray-200 p-3 w-full rounded-md"
+                "class": "border border-gray-200 px-3 py-2 w-full rounded-md"
                 }),
             "description": Textarea(attrs={
                     "rows": 2,
-                    "class": "border border-gray-200 p-3 w-full rounded-md"
+                    "class": "border border-gray-200 px-3 py-2 w-full rounded-md"
                 }),
         }

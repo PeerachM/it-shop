@@ -1,0 +1,120 @@
+{% extends 'admin_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %} รายการสินค้า - IT Shop {% endblock %}
+
+{% block product_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-box-open me-2"></i>
+    <span class="font-regular">สินค้า</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex justify-between items-center">
+    <h1 class="text-2xl ms-1 text-gray-600">รายการสินค้า</h1>
+    <a href="{% url 'product_create' %}">
+        <button
+            class="w-full p-2 rounded-md text-left bg-purple-700 text-white hover:bg-purple-600 hover:cursor-pointer">
+            <i class="fa-solid fa-plus"></i>
+            <span class="font-regular">เพิ่มสินค้า</span>
+        </button>
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<table class="w-full">
+    <thead>
+        <tr class="border-b border-gray-300 text-sm text-left">
+            <th class="p-4 w-[128px]">สินค้า</th>
+            <th class="p-4"></th>
+            <th class="p-4">แบรนด์</th>
+            <th class="p-4">หมวดหมู่</th>
+            <th class="p-4">คงเหลือ</th>
+            <th class="p-4">ราคาพื้นฐาน</th>
+            <th class="p-4">ส่วนลด</th>
+            <th class="p-4">ราคาขาย</th>
+            <th class="p-4">สถานะ</th>
+            <th class="p-4">จัดการ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr class="border-b border-gray-200 text-sm">
+            <td class="p-4">
+                {% if product.image %}
+                <img class="rounded-md object-cover h-[72px] w-[96px]" src="{{product.image.url}}" width="96"
+                    height="72" alt="Product's Image" />
+                {% else %}
+                <img class="rounded-md object-cover h-[72px] w-[96px]" src="{% static 'img/no_img.jepg' %}" width="96"
+                    height="72" alt="Product's Image" />
+                {% endif %}
+            </td>
+            <td class="p-4">
+                {{ product.name}}
+            </td>
+            <td class="p-4">
+                {{product.brand|default_if_none:"-"}}
+            </td>
+            <td class="p-4">
+                {% if product.category %}
+                {{product.category}}
+                {% else %}
+                –
+                {% endif %}
+            </td>
+            <td class="p-4">
+                {% if not product.stock %}
+                <p class="text-red-600">สินค้าหมด</p>
+                {% elif product.stock < 5 %}
+                <p class="text-yellow-700">{{product.stock|intcomma}} ชิ้น</p>
+                {% else %}
+                {{ product.stock|intcomma}} ชิ้น
+                {% endif %}
+            </td>
+            <td class="p-4">
+                <span class="text-xs">฿</span>{{product.price|intcomma}}
+            </td>
+            <td class="p-4">
+                {% if product.discount_type == "PERCENT" %}
+                {{product.discount_value }}<span class="text-xs">%</span>
+                {% elif product.discount_type == "FIXED" %}
+                <span class="text-xs">฿</span>{{product.discount_value|intcomma }}
+                {% else %}
+                –
+                {% endif %}
+            </td>
+            <td class="p-4">
+                <span class="text-xs">฿</span>{{product.sale_price|floatformat:2|intcomma}}
+            </td>
+            <td class="p-4">
+                {% if product.is_active %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-300 text-green-700 text-xs">
+                    <i class="fa-solid fa-circle-check"></i>
+                    วางขาย
+                </div>
+                {% else %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-300 text-red-600 text-xs">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    ไม่วางขาย
+                </div>
+                {% endif %}
+            </td>
+            <td class="p-4">
+                <a href="{% url 'product_edit' product.id %}">
+                    <button
+                        class="px-2 py-1 text-white bg-yellow-500 hover:bg-yellow-600/70 rounded-md text-sm hover:cursor-pointer">
+                        <i class="fa-solid fa-pencil-alt"></i>
+                        แก้ไข
+                    </button>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+{% endblock %}
