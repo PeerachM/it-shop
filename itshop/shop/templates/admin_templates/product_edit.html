@@ -12,14 +12,45 @@
 {% endblock %}
 
 {% block head %}
-<div class="flex items-center gap-1">
-    <a href="{% url 'product' %}">
-        <button type="button"
-            class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
-            <i class="fa-solid fa-angle-left text-sm"></i>
+<div class="flex items-center gap-1 justify-between">
+    <div class="flex items-center gap-1">
+        <a href="{% url 'product' %}">
+            <button type="button"
+                class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
+                <i class="fa-solid fa-angle-left text-sm"></i>
+            </button>
+        </a>
+        <h1 class="text-2xl ms-1 text-gray-600">แก้ไขสินค้า #{{form.instance.id}}</h1>
+        {% if form.instance.is_active %}
+        <div class="inline-flex items-center gap-1 ms-5 px-3 py-1 rounded-full bg-green-300 text-green-700 text-sm">
+            <i class="fa-solid fa-circle-check"></i>
+            วางขาย
+        </div>
+        {% else %}
+        <div class="inline-flex items-center gap-1 ms-5 px-3 py-1 rounded-full bg-red-300 text-red-600 text-sm">
+            <i class="fa-solid fa-circle-xmark"></i>
+            ไม่วางขาย
+        </div>
+        {% endif %}
+    </div>
+    {% if form.instance.is_active %}
+    <form action="{% url 'product_deactivate' form.instance.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit"
+            class="px-3 py-1 text-red-600 border-2 border-red-400 hover:bg-red-400 hover:text-white rounded-md hover:cursor-pointer transition duration-300">
+            <i class="fa-solid fa-eye-slash"></i> ปิดการขาย
         </button>
-    </a>
-    <h1 class="text-2xl ms-1 text-gray-600">แก้ไขสินค้า</h1>
+    </form>
+    {% else %}
+    <form action="{% url 'product_activate' form.instance.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" 
+            class=" px-3 py-1 text-green-600 border-2 border-green-500 hover:bg-green-500 hover:text-white rounded-md hover:cursor-pointer transition duration-300">
+            <i class="fa-solid fa-eye"></i>
+            เปิดการขาย
+        </button>
+    </form>
+    {% endif %}
 </div>
 {% endblock %}
 

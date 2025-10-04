@@ -39,7 +39,6 @@ class CreateProductView(View):
             product_form.save()
             return redirect("product")
         context = {'form': product_form}
-        print(product_form.errors)
         return render(request, "admin_templates/product_create.html", context)
     
 class EditProductView(View):
@@ -56,8 +55,22 @@ class EditProductView(View):
             product_form.save()
             return redirect("product")
         context = {'form': product_form}
-        print(product_form.errors)
         return render(request, "admin_templates/product_edit.html", context)
+
+class ActivateProductView(View):
+    def post(self, request, id):
+        product = Product.objects.get(id=id)
+        product.is_active = True;
+        product.save()
+        return redirect('product_edit', id=id)
+
+class DeactivateProductView(View):
+    def post(self, request, id):
+        product = Product.objects.get(id=id)
+        product.is_active = False;
+        product.save()
+        return redirect('product_edit', id=id)
+
 
 
 # CATEGORY
