@@ -7,8 +7,8 @@ from django.contrib.auth.models import Group
 
 from django.db.models import Count
 
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 
@@ -27,6 +27,7 @@ class RegisterView(View):
             user = reg_form.save()
             cus_group = Group.objects.get(name="customer")
             user.groups.add(cus_group)
+            Customer.objects.create(user=user)
 
             login(request, user)
             return redirect('customer_home')
@@ -61,13 +62,51 @@ class LogoutView(View):
     def get(self, request):
         logout(request)
         return redirect('login')
+    
+class ChangePasswordView(View):
+    def get(self, request):
+        form = PasswordChangeForm(user=request.user)
+        context = {"form": form}
+        return render(request, 'customer_templates/change_password.html', context)
+    def post(self, request):
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important for keeping the user logged in
+            return redirect('profile')
+        context = {"form": form}
+        return render(request, 'customer_templates/change_password.html', context)
 
 
 
 class CutomerHomeView(View):
     def get(self, request):
         return render(request, "customer_templates/product_list.html")
-    
+
+class EditProfileView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_customer", "auth.change_user"]
+    def get(self, request):
+        user_form = UserForm(instance=request.user)
+        customer_form = CustomerForm(instance=request.user.customer)
+        context = {
+            "user_form": user_form,
+            "customer_form": customer_form,
+        }
+        return render(request, "customer_templates/profile_edit.html", context)
+    def post(self, request):
+        user = request.user
+        user_form = UserForm(request.POST, instance=user)
+        customer_form = CustomerForm(request.POST, request.FILES, instance=user.customer)
+        if user_form.is_valid() and customer_form.is_valid():
+            user_form.save()
+            customer_form.save()
+            return redirect("customer_home")
+        context = {
+            "user_form": user_form,
+            "customer_form": customer_form,
+        }
+        print(customer_form.errors)
+        return render(request, "customer_templates/profile_edit.html", context)
 
 
 

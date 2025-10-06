@@ -11,6 +11,19 @@ class CustomUserCreationForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2']
 
+class UserForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name']
+
+class CustomerForm(ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['phone', 'image']
+        widgets = {
+            "image": FileInput(attrs={"class": "hidden"})
+        }
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product
