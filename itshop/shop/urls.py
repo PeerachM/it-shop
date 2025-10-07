@@ -7,8 +7,15 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view(), name="logout"),
 
     path("", views.CutomerHomeView.as_view(), name="customer_home"),
+
     path("profile/", views.EditProfileView.as_view(), name="profile"),
     path("profile/change-password/", views.ChangePasswordView.as_view(), name="change_password"),
+
+    path("address/", views.AddressView.as_view(), name="address"),
+    path("address/create", views.CreateAddressView.as_view(), name="address_create"),
+    path("address/<int:id>/edit", views.EditAddressView.as_view(), name="address_edit"),
+    path("address/<int:id>/delete", views.DeleteAddressView.as_view(), name="address_delete"),
+
 
 
     path("management/", views.AdminHomeView.as_view(), name="admin_home"),

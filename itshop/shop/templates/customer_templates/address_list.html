@@ -1,0 +1,57 @@
+{% extends 'customer_templates/base.html' %}
+{% load static %}
+
+{% block title %} ทึ่อยู่จัดส่ง {% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center py-10 gap-2">
+    <div class="w-2/3 px-8 py-4 bg-white rounded-md border border-gray-200 flex justify-between mb-2">
+        <p class="text-xl text-gray-800 flex items-center gap-2">
+            <span class="text-gray-700 flex items-center">
+                <i class="fa-solid fa-map-location-dot"></i>
+            </span>
+            ที่อยู่จัดส่ง
+        </p>
+        <a href="{% url 'address_create' %}">
+            <button
+                class="w-full p-2 rounded-md text-left bg-purple-500 text-white hover:bg-purple-600 hover:cursor-pointer text-sm">
+                <i class="fa-solid fa-plus"></i>
+                <span class="font-regular">เพิ่มที่อยู่</span>
+            </button>
+        </a>
+    </div>
+    {% if not addresses %}
+    <div class="w-2/3 px-12 p-8 rounded-md border border-gray-200 text-center text-gray-500">
+        ไม่มีที่อยู่จัดส่ง
+    </div>
+    {% else %}
+    {% for address in addresses %}
+    <div class="w-2/3 px-8 py-6 bg-white rounded-md border border-gray-200 flex justify-between items-start">
+        <div class="space-y-1">
+            <p class="font-semibold text-gray-800">{{ address.full_name }}</p>
+            <p class="text-gray-600 text-sm">{{ address.phone }}</p>
+            <p class="text-gray-700 text-sm">
+                {{ address.address }}<br>
+                {{ address.sub_district }} {{ address.district }}<br>
+                {{ address.province }} {{ address.postal_code }}
+            </p>
+        </div>
+        <div class="flex flex-col gap-2 text-right">
+            <a href="{% url 'address_edit' address.id %}">
+                <button class="px-3 py-1 text-sm border border-yellow-500 text-yellow-600 rounded hover:border-yellow-600 hover:cursor-pointer">
+                    <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                </button>
+            </a>
+            <form method="post" action="{% url 'address_delete' address.id %}">
+                {% csrf_token %}
+                <button type="submit" class="px-3 py-1 text-sm border border-red-500 text-red-500 rounded hover:border-red-600 hover:cursor-pointer" onclick="return confirm('ต้องการลบที่อยู่นี้หรือไม่?');">
+                    <i class="fa-solid fa-trash"></i> ลบ
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

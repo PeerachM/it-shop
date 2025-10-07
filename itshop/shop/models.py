@@ -48,12 +48,12 @@ class Customer(models.Model):
 class Address(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=200)
-    phone = models.CharField(max_length=20)
+    phone = models.CharField(max_length=10)
     address = models.TextField()
     district = models.CharField(max_length=50)
     sub_district = models.CharField(max_length=50)
     province = models.CharField(max_length=50)
-    postal_code = models.CharField(max_length=10)
+    postal_code = models.CharField(max_length=5)
 
 class CartItem(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)

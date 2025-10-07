@@ -81,7 +81,9 @@ class ChangePasswordView(View):
 
 class CutomerHomeView(View):
     def get(self, request):
-        return render(request, "customer_templates/product_list.html")
+        products = Product.objects.all()
+        context = {"products": products}
+        return render(request, "customer_templates/product_list.html", context)
 
 class EditProfileView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_customer", "auth.change_user"]
@@ -105,8 +107,59 @@ class EditProfileView(PermissionRequiredMixin, View):
             "user_form": user_form,
             "customer_form": customer_form,
         }
-        print(customer_form.errors)
         return render(request, "customer_templates/profile_edit.html", context)
+    
+class AddressView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_address"]
+    def get(self, request):
+        addresses = Address.objects.filter(customer=request.user.customer)
+        context = {"addresses": addresses}
+        return render(request, "customer_templates/address_list.html", context)
+
+class CreateAddressView(PermissionRequiredMixin, View):
+    permission_required = ["shop.add_address"]
+    def get(self, request):
+        address_form = AddressForm()
+        context = {"form": address_form}
+        return render(request, "customer_templates/address_create.html", context)
+    def post(self, request):
+        address_form = AddressForm(request.POST)
+        if address_form.is_valid():
+            address = address_form.save(commit=False)
+            address.customer = request.user.customer
+            address.save()
+            return redirect("address")
+        context = {'form': address_form}
+        return render(request, "customer_templates/address_create.html", context)
+
+class EditAddressView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_address"]
+    def get(self, request, id):
+        address = Address.objects.get(id=id)
+        if address.customer != request.user.customer:
+            raise PermissionDenied()
+        address_form = AddressForm(instance=address)
+        context = {"form": address_form}
+        return render(request, "customer_templates/address_edit.html", context)
+    def post(self, request, id):
+        address = Address.objects.get(id=id)
+        if address.customer != request.user.customer:
+            raise PermissionDenied()
+        address_form = AddressForm(request.POST, instance=address)
+        if address_form.is_valid():
+            address_form.save()
+            return redirect("address")
+        context = {'form': address_form}
+        return render(request, "customer_templates/address_edit.html", context)
+    
+class DeleteAddressView(PermissionRequiredMixin, View):
+    permission_required = ["shop.delete_address",]
+    def post(self, request, id):
+        address = Address.objects.get(id=id)
+        if address.customer != request.user.customer:
+            raise PermissionDenied()
+        address.delete()
+        return redirect("address")
 
 
 

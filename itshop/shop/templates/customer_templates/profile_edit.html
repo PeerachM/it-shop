@@ -5,8 +5,13 @@
 
 {% block content %}
 <div class="flex flex-col items-center justify-center py-10 gap-3">
-    <div class="w-2/3 px-12 py-4 bg-white rounded-md border border-gray-200">
-        <p class="text-2xl text-center">ข้อมูลโปรไฟล์</p>
+    <div class="w-2/3 flex items-center px-8 py-4 bg-white rounded-md border border-gray-200">
+        <p class="text-xl text-gray-800 flex items-center gap-2">
+            <span class="text-base text-gray-700 flex items-center">
+                <i class="fa-solid fa-user"></i>
+            </span>
+            ข้อมูลโปรไฟล์
+        </p>
     </div>
     <div class="w-2/3 px-12 pt-10 pb-5 bg-white rounded-md border border-gray-200">
         {{ user_form.non_field_errors }}

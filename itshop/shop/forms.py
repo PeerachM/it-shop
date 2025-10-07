@@ -24,6 +24,36 @@ class CustomerForm(ModelForm):
             "image": FileInput(attrs={"class": "hidden"})
         }
 
+        def clean_phone(self):
+            phone = self.cleaned_data.get("phone")
+            if not phone.isdigit():
+                raise forms.ValidationError("กรุณากรอกเฉพาะตัวเลขในเบอร์โทรศัพท์")
+            if len(phone) < 9 or len(phone) > 10:
+                raise forms.ValidationError("เบอร์โทรศัพท์ควรมี 9–10 หลัก")
+
+class AddressForm(ModelForm):
+    class Meta:
+        model = Address
+        exclude = ['customer']
+        widgets = {
+            "address": Textarea(attrs={"rows": 3}),
+        }
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone")
+        if not phone.isdigit():
+            raise forms.ValidationError("กรุณากรอกเฉพาะตัวเลขในเบอร์โทรศัพท์")
+        if len(phone) < 9 or len(phone) > 10:
+            raise forms.ValidationError("เบอร์โทรศัพท์ต้องมี 9–10 หลัก")
+        return phone
+    def clean_postal_code(self):
+        postal = self.cleaned_data.get("postal_code")
+        if not postal.isdigit():
+            raise forms.ValidationError("รหัสไปรษณีย์ต้องเป็นตัวเลขเท่านั้น")
+        if len(postal) != 5:
+            raise forms.ValidationError("รหัสไปรษณีย์ต้องมี 5 หลัก")
+        return postal
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product
