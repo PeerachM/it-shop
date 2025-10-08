@@ -49,12 +49,12 @@
                 <img class="rounded-md object-cover h-[72px] w-[96px]" src="{{product.image.url}}" width="96"
                     height="72" alt="Product's Image" />
                 {% else %}
-                <img class="rounded-md object-cover h-[72px] w-[96px]" src="{% static 'img/no_img.jepg' %}" width="96"
+                <img class="rounded-md object-cover h-[72px] w-[96px]" src="{% static 'img/no_img.jpeg' %}" width="96"
                     height="72" alt="Product's Image" />
                 {% endif %}
             </td>
             <td class="p-4">
-                {{ product.name}}
+                {{ product.name|truncatechars:30}}
             </td>
             <td class="p-4">
                 {{product.brand|default_if_none:"-"}}

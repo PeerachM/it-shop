@@ -6,7 +6,8 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
 
-    path("", views.CutomerHomeView.as_view(), name="customer_home"),
+    path("product/", views.ProductListView.as_view(), name="product_list"),
+    path("product/<int:id>", views.ProductDetailView.as_view(), name="product_detail"),
 
     path("profile/", views.EditProfileView.as_view(), name="profile"),
     path("profile/change-password/", views.ChangePasswordView.as_view(), name="change_password"),

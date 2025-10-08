@@ -30,7 +30,7 @@ class RegisterView(View):
             Customer.objects.create(user=user)
 
             login(request, user)
-            return redirect('customer_home')
+            return redirect('product_list')
         
         context = {'form': reg_form}
         return render(request, "auth_templates/register.html", context)
@@ -53,7 +53,7 @@ class LoginView(View):
             elif is_admin(user):
                 return redirect('admin_home')
             else:
-                return redirect('customer_home')
+                return redirect('product_list')
 
         context = {'form': login_form}
         return render(request, "auth_templates/login.html", context)
@@ -79,11 +79,37 @@ class ChangePasswordView(View):
 
 
 
-class CutomerHomeView(View):
+class ProductListView(View):
     def get(self, request):
-        products = Product.objects.all()
-        context = {"products": products}
+        search = request.GET.get("search", "")
+        category = request.GET.get("category", "all")
+        brand = request.GET.get("brand", "all")
+        orderby = request.GET.get("sort", "name")
+
+        products = Product.objects.filter(name__icontains=search).order_by(orderby)
+        if category!="all":
+            products = products.filter(category__name=category)
+        if brand!="all":
+            products = products.filter(brand__name=brand)
+
+        categories = Category.objects.all()
+
+        if category!="all":
+            brands = Brand.objects.filter(product__category__name=category).distinct()
+        else:
+            brands = Brand.objects.all()
+
+        context = {
+            "products": products,
+            "categories": categories,
+            "brands": brands,
+            "total": products.count()
+            }
         return render(request, "customer_templates/product_list.html", context)
+    
+class ProductDetailView(View):
+    def get(self, request, id):
+        return redirect("product_list")
 
 class EditProfileView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_customer", "auth.change_user"]
@@ -102,7 +128,7 @@ class EditProfileView(PermissionRequiredMixin, View):
         if user_form.is_valid() and customer_form.is_valid():
             user_form.save()
             customer_form.save()
-            return redirect("customer_home")
+            return redirect("product_list")
         context = {
             "user_form": user_form,
             "customer_form": customer_form,
@@ -291,7 +317,7 @@ class BrandView(PermissionRequiredMixin, View):
         return render(request, "admin_templates/brand_list.html", context)
 
 class CreateBrandView(PermissionRequiredMixin, View):
-    permission_required = ["shop.create_brand",]
+    permission_required = ["shop.add_brand",]
     def get(self, request):
         brand_form = BrandForm()
         context = {'form': brand_form}

@@ -38,6 +38,12 @@ class Product(models.Model):
         elif self.discount_type == "FIXED":
             return self.price - self.discount_value
         return self.price
+    def discount_percent(self):
+        if self.discount_type == "PERCENT":
+            return self.discount_value
+        elif self.discount_type == "FIXED":
+            return (self.discount_value / self.price) * 100
+        return 0
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

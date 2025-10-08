@@ -1,0 +1,147 @@
+{% extends 'customer_templates/base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}รายการสินค้า{% endblock %}
+
+{% block searchbar %}
+<div class="flex items-center">
+    <input type="text" id="search-input" name="search" placeholder="ค้นหาสินค้า..." {% if request.GET.search %} value="{{request.GET.search}}" {% endif %}>
+    <button type="button" id="search-btn"
+        class="ml-2 bg-purple-500 text-white rounded-md px-3 py-2 hover:bg-purple-600 hover:cursor-pointer">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex bg-gray-50 px-36">
+    <div
+        class="w-64 h-[calc(100vh-8rem)] fixed top-24 left-36 bg-white rounded-md p-8 overflow-y-auto border border-gray-200">
+
+        <h2 class="text-lg font-semibold mb-4">หมวดหมู่สินค้า</h2>
+        <ul class="space-y-2 mb-6 ms-2">
+            <li>
+                <button value="all"
+                    class="category-btn block text-left hover:text-purple-600 hover:cursor-pointer {% if request.GET.category == 'all' or not request.GET.category%} text-purple-600 font-semibold {% endif %}">
+                    ทั้งหมด
+                </button>
+            </li>
+            {% for category in categories %}
+            <li>
+                <button value="{{category.name}}"
+                    class="category-btn block text-left hover:text-purple-600 hover:cursor-pointer {% if request.GET.category == category.name%} text-purple-600 font-semibold {% endif %}">
+                    {{category.name}}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="text-lg font-semibold mb-4">แบรนด์</h2>
+        <ul class="space-y-2 ms-2">
+            <li>
+                <button value="all" class="brand-btn block text-left hover:text-purple-600 hover:cursor-pointer {% if request.GET.brand == 'all' or not request.GET.brand%} text-purple-600 font-semibold {% endif %}">
+                    ทั้งหมด
+                </button>
+            </li>
+            {% for brand in brands %}
+            <li>
+                <button value="{{brand.name}}"
+                    class="brand-btn block text-left hover:text-purple-600 hover:cursor-pointer {% if request.GET.brand == brand.name%} text-purple-600 font-semibold {% endif %}">
+                    {{brand.name}}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Product list -->
+    <div class="ml-72 flex-1 p-6 py-8">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h1 class="text-2xl font-semibold">รายการสินค้า</h1>
+                <p class="text-sm text-gray-400">{{ total }} รายการ</p>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <label for="sort-select" class="text-sm w-1/3 text-gray-600">เรียงตาม:</label>
+                <select id="sort-select" class="!px-2 !py-1 !w-2/3 text-sm text-gray-800">
+                    <option value="name" {% if request.GET.sort == "name"%} selected {% endif %}>ชื่อ A - Z</option>
+                    <option value="-name" {% if request.GET.sort == "-name" %} selected {% endif %}>ชื่อ Z - A</option>
+                    <option value="price" {% if request.GET.sort == "price" %} selected {% endif %}>ราคาต่ำ - สูง</option>
+                    <option value="-price" {% if request.GET.sort == "-price" %} selected {% endif %}>ราคาสูง - ต่ำ</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {% for product in products %}
+            <a href="{% url 'product_detail' product.id %}">
+                <div
+                    class="flex flex-col h-full bg-white rounded-md border border-gray-200 hover:shadow-sm transform hover:-translate-y-1 transition-all p-4 duration-200">
+                    <div class="relative">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                            class="w-full h-40 object-cover rounded-lg mb-3">
+                        {% else %}
+                        <img src="{% static 'img/no_img.jpeg' %}" alt=""
+                            class="w-full h-40 object-cover rounded-lg mb-3">
+                        {% endif %}
+
+                        {% if product.discount_type != "NONE" and product.discount_value > 0 %}
+                        <span
+                            class="absolute top-1 right-1 text-xs font-semibold bg-red-500 text-white px-2 py-1 rounded-full shadow-sm">
+                            -{{ product.discount_percent|floatformat:-2 }}%
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <h3 class="text-lg font-medium">{{ product.name|truncatechars:20 }}</h3>
+                    <p class="text-gray-600 text-sm">{{ product.brand|default_if_none:"ไม่ระบุ"|truncatechars:30 }}</p>
+
+                    {% if product.discount_type != "NONE" and product.discount_value > 0 %}
+                    <div class="mt-1">
+                        <p class="text-purple-600 font-semibold text-lg">
+                            ฿{{ product.sale_price|floatformat:-2|intcomma }}
+                            <span class="text-sm text-gray-400 line-through">
+                                ฿{{ product.price|floatformat:-2|intcomma }}
+                            </span>
+                        </p>
+                    </div>
+                    {% else %}
+                    <p class="text-purple-600 font-semibold text-lg mt-1">฿{{ product.sale_price|floatformat:-2|intcomma }}</p>
+                    {% endif %}
+                </div>
+            </a>
+            {% empty %}
+            <p class="text-gray-500 col-span-full text-center">ไม่มีสินค้าในหมวดนี้</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<script>
+    function setParam(key, value) {
+        const url = new URL(window.location);
+        url.searchParams.set(key, value);
+        window.location.href = url.toString();
+    }
+    document.getElementById('search-btn').addEventListener('click', () => {
+        const searchValue = document.getElementById('search-input').value;
+        setParam("search", searchValue);
+    });
+    document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const url = new URL(window.location);
+            url.searchParams.set("category", btn.value);
+            url.searchParams.delete("brand")
+            window.location.href = url.toString();
+        });
+    });
+    document.querySelectorAll(".brand-btn").forEach(btn => {
+        btn.addEventListener("click", () => setParam("brand", btn.value));
+    });
+    document.getElementById('sort-select').addEventListener('change', () => {
+        setParam("sort", this.value);
+    });
+</script>
+{% endblock %}
