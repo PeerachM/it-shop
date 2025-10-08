@@ -140,7 +140,7 @@
     document.querySelectorAll(".brand-btn").forEach(btn => {
         btn.addEventListener("click", () => setParam("brand", btn.value));
     });
-    document.getElementById('sort-select').addEventListener('change', () => {
+    document.getElementById('sort-select').addEventListener('change', function() {
         setParam("sort", this.value);
     });
 </script>
