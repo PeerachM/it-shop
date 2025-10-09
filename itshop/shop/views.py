@@ -5,7 +5,7 @@ from .models import *
 from .forms import *
 from django.contrib.auth.models import Group
 
-from django.db.models import Count
+from django.db.models import Count, Sum, Case, When, F
 
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
@@ -14,6 +14,9 @@ from django.core.exceptions import PermissionDenied
 
 def is_admin(user):
     return user.groups.filter(name="admin").exists()
+
+def check_in_wishlist(customer, product_id):
+    return customer.wishlist.filter(id=product_id).exists()
 
 class RegisterView(View):
     def get(self, request):
@@ -77,8 +80,9 @@ class ChangePasswordView(View):
         context = {"form": form}
         return render(request, 'customer_templates/change_password.html', context)
 
+# ---CUSTOMER---
 
-
+# PRODUCT (customer)
 class ProductListView(View):
     def get(self, request):
         search = request.GET.get("search", "")
@@ -86,7 +90,7 @@ class ProductListView(View):
         brand = request.GET.get("brand", "all")
         orderby = request.GET.get("sort", "name")
 
-        products = Product.objects.filter(name__icontains=search).order_by(orderby)
+        products = Product.objects.filter(name__icontains=search, is_active=True).order_by(orderby)
         if category!="all":
             products = products.filter(category__name=category)
         if brand!="all":
@@ -95,6 +99,7 @@ class ProductListView(View):
         categories = Category.objects.all()
 
         if category!="all":
+            # เอาเฉพาะ brand ที่มีสินค้าอยู่ใน category นั้นๆ ไปแสดง
             brands = Brand.objects.filter(product__category__name=category).distinct()
         else:
             brands = Brand.objects.all()
@@ -109,7 +114,17 @@ class ProductListView(View):
     
 class ProductDetailView(View):
     def get(self, request, id):
-        return redirect("product_list")
+        product = Product.objects.get(id=id)
+        in_wishlist = False
+        if request.user.is_authenticated:
+            customer = Customer.objects.get(user=request.user)
+            # check ว่ามีอยู่ในรายการ wishlist ไหม
+            in_wishlist = check_in_wishlist(customer, product.id)
+        context = {
+            "product": product,
+            "in_wishlist": in_wishlist
+        }
+        return render(request, "customer_templates/product_detail.html", context)
 
 class EditProfileView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_customer", "auth.change_user"]
@@ -134,7 +149,8 @@ class EditProfileView(PermissionRequiredMixin, View):
             "customer_form": customer_form,
         }
         return render(request, "customer_templates/profile_edit.html", context)
-    
+
+# ADDRESS
 class AddressView(PermissionRequiredMixin, View):
     permission_required = ["shop.view_address"]
     def get(self, request):
@@ -159,7 +175,7 @@ class CreateAddressView(PermissionRequiredMixin, View):
         return render(request, "customer_templates/address_create.html", context)
 
 class EditAddressView(PermissionRequiredMixin, View):
-    permission_required = ["shop.change_address"]
+    permission_required = ["shop.view_address", "shop.change_address"]
     def get(self, request, id):
         address = Address.objects.get(id=id)
         if address.customer != request.user.customer:
@@ -186,10 +202,84 @@ class DeleteAddressView(PermissionRequiredMixin, View):
             raise PermissionDenied()
         address.delete()
         return redirect("address")
+    
+# WISHLIST
+class WishlistView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_customer", "shop.change_customer"]
+    def get(self, request):
+        customer = Customer.objects.get(user=request.user)
+        products = customer.wishlist.all()
+        context = {
+            "products": products,
+            "total": products.count()
+        }
+        return render(request, "customer_templates/wishlist.html", context)
+
+class AddWishlistView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_customer"]
+    def get(self, request, id):
+        product = Product.objects.get(id=id)
+        customer = Customer.objects.get(user=request.user)
+        # check ว่ามีอยู่ในรายการ wishlist ไหม
+        in_wishlist = check_in_wishlist(customer, product.id)
+        if not in_wishlist:
+            customer.wishlist.add(product)
+        return redirect("product_detail", id)
+    
+class RemoveWishlistView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_customer"]
+    def get(self, request, id):
+        product = Product.objects.get(id=id)
+        customer = Customer.objects.get(user=request.user)
+        # check ว่ามีอยู่ในรายการ wishlist ไหม
+        in_wishlist = check_in_wishlist(customer, product.id)
+        if in_wishlist:
+            customer.wishlist.remove(product)
+        path = request.GET.get("next")
+        if path:
+            return redirect(path)
+        return redirect("wishlist")
+
+# CART
+class CartView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_cartitem", "shop.change_cartitem"]
+    def get(self, request):
+        customer = Customer.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(customer=customer).annotate(
+            sale_price=Case(
+                When(product__discount_type="NONE", then=F("product__price")),
+                When(product__discount_type="PERCENT", then=(F("product__price") * (1 - F("product__discount_value") / 100))),
+                When(product__discount_type="FIXED", then=(F("product__price") - F("product__discount_value"))),
+            ), 
+            discount_amount = F("product__price") - F("sale_price"),
+            total_sale_price = F("sale_price") * F("quantity")
+        )
+        total = cart_items.aggregate(total=Sum("total_sale_price"))["total"]
+        context = {
+            "cart_items": cart_items,
+            "total": total
+        }
+        return render(request, "customer_templates/cart.html", context)
+    
+class AddCartView(PermissionRequiredMixin, View):
+    permission_required = ["shop.add_cartitem"]
+    def get(self, request):
+        return redirect("wishlist")
+    
+class RemoveCartView(PermissionRequiredMixin, View):
+    permission_required = ["shop.delete_cartitem"]
+    def get(self, request):
+        return redirect("wishlist")
+    
+class ChangeCartView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_cartitem"]
+    def get(self, request):
+        return redirect("wishlist")
 
 
+# ---ADMIN---
 
-
+# HOME
 class AdminHomeView(PermissionRequiredMixin, View):
     permission_required = ["shop.view_product", "shop.view_order"]
     def get(self, request):
@@ -199,7 +289,7 @@ class AdminHomeView(PermissionRequiredMixin, View):
         return render(request, "admin_templates/home.html")
 
 
-# PRODUCT
+# PRODUCT (admin)
 class ProductView(PermissionRequiredMixin, View):
     permission_required = ["shop.view_product",]
     def get(self, request):

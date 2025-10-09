@@ -1,0 +1,156 @@
+{% extends 'customer_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %} {{product.name|truncatechars:20}} - IT Shop{% endblock %}
+
+{% block content %}
+<div class="flex justify-center py-12 px-6 items-center">
+    <div class="max-w-7xl w-full flex gap-8">
+
+        <!-- image -->
+        <div class="w-1/2 bg-white rounded-md p-6 flex justify-center items-center border border-gray-200">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                class="rounded-md object-cover h-full border border-gray-200">
+            {% else %}
+            <img src="{% static 'img/no_img.jpeg' %}" alt="{{ product.name }}" class="rounded-md object-cover h-full">
+            {% endif %}
+        </div>
+
+        <!-- detail -->
+        <div class="w-1/2 bg-white rounded-md py-10 px-12 border border-gray-200 flex flex-col justify-between min-h-[60vh]">
+
+            <div>
+                <!-- name, category, brand -->
+                <h1 class="text-3xl/8 font-bold mb-2 break-words">{{ product.name }}</h1>
+
+                <div class="flex gap-3 mb-12">
+                    <p class="text-gray-500 text-sm">หมวดหมู่: {{ product.category.name|default:"ไม่ระบุ" }}</p>
+                    <p class="text-gray-500 text-sm">|</p>
+                    <p class="text-gray-500 text-sm">แบรนด์: {{ product.brand.name|default:"ไม่ระบุ" }}</p>
+                </div>
+            </div>
+
+            <div>
+                <!-- description -->
+                <p class="text-gray-600 text-base mb-12 break-words">
+                    {{ product.description|default:"ไม่มีรายละเอียด" }}
+                </p>
+            </div>
+
+            <div>
+                <!-- price -->
+                {% if product.discount_type != "NONE" and product.discount_value > 0 %}
+                <div class="flex items-center gap-3 mb-9">
+                    <p class="text-4xl font-bold text-purple-600">฿{{ product.sale_price|floatformat:2|intcomma }}</p>
+                    <p class="text-gray-400 line-through">฿{{ product.price|floatformat:2|intcomma }}</p>
+                    <span class="text-red-500 font-semibold bg-red-100 px-2 py-[1px] rounded-md text-sm">
+                        -{{ product.discount_percent|floatformat:0 }}%
+                    </span>
+                </div>
+                {% else %}
+                <p class="text-4xl font-bold text-purple-600 mb-9">฿{{ product.price|intcomma }}</p>
+                {% endif %}
+
+                <!-- amount input -->
+                <div class="flex items-center gap-3 mb-9">
+                    <label for="quantity" class="font-medium text-gray-700">จำนวน:</label>
+                    <input type="number" id="quantity" name="quantity"
+                        {% if product.stock > 0 %} value="1" min="1" max="{{ product.stock }}" {% else %} disabled
+                        value="0" {% endif %}
+                        class="!w-32 rounded-md !px-2 !py-1 text-center">
+
+                    <span class="text-gray-500 text-sm">
+                        {% if product.stock > 0 %}
+                        คงเหลือ {{ product.stock }} ชิ้น
+                        {% else %}
+                        สินค้าหมด
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- buttons -->
+                <div class="flex gap-4">
+
+                    <!-- add cart -->
+                    {% if product.stock > 0 %}
+                    <button
+                        class="w-3/5 bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-2 rounded-md transition duration-200 hover:cursor-pointer">
+                        <i class="fa-solid fa-cart-shopping mr-2"></i>ใส่ตะกร้า
+                    </button>
+                    {% else %}
+                    <button
+                        class="w-3/5 bg-gray-300 text-gray-500 font-semibold px-6 py-2 rounded-md"
+                        disabled>
+                        <i class="fa-solid fa-cart-shopping mr-2"></i>สินค้าหมด
+                    </button>
+                    {% endif %}
+
+                    <!-- wishlist -->
+                    {% if in_wishlist %}
+                    <a href="{% url 'remove_from_wishlist' product.id %}?next={{ request.path }}" class="w-2/5">
+                        <button id="in-wishlist-btn" type="button"
+                            class="bg-gray-200 border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-md transition duration-200 hover:cursor-pointer">
+                            <i id="in-wishlist-icon" class="fa-solid fa-heart"></i>
+                            <span id="in-wishlist-text">อยู่ในรายการโปรด</span>
+                        </button>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'add_to_wishlist' product.id %}" class="w-2/5">
+                        <button id="not-in-wishlist-btn" type="button"
+                            class="border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-md transition duration-200 hover:cursor-pointer">
+                            <i id="not-in-wishlist-icon" class="fa-regular fa-heart"></i> 
+                            <span id="not-in-wishlist-text">เพิ่มในรายการโปรด</span>
+                        </button>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{% if in_wishlist %}
+    <script>
+        const inWishlistBtn = document.getElementById('in-wishlist-btn');
+        const inWishlistIcon = document.getElementById('in-wishlist-icon');
+        const inWishlistText = document.getElementById('in-wishlist-text');
+
+        inWishlistBtn.addEventListener('mouseenter', () => {
+            inWishlistIcon.classList.replace('fa-heart', 'fa-heart-circle-xmark');
+            inWishlistBtn.classList.replace('bg-gray-200', 'bg-red-200');
+            inWishlistBtn.classList.replace('text-gray-700', 'text-red-500');
+            inWishlistText.textContent = 'ลบจากรายการโปรด';
+        });
+
+        inWishlistBtn.addEventListener('mouseleave', () => {
+            inWishlistIcon.classList.replace('fa-heart-circle-xmark', 'fa-heart');
+            inWishlistBtn.classList.replace('bg-red-200', 'bg-gray-200');
+            inWishlistBtn.classList.replace('text-red-500', 'text-gray-700');
+            inWishlistText.textContent = 'อยู่ในรายการโปรด';
+        });
+    </script>
+{% else %}
+    <script>
+        const notInWishlistBtn = document.getElementById('not-in-wishlist-btn');
+        const notInWishlistIcon = document.getElementById('not-in-wishlist-icon');
+
+        notInWishlistBtn.addEventListener('mouseenter', () => {
+            notInWishlistIcon.classList.replace('fa-regular', 'fa-solid');
+            notInWishlistBtn.classList.add('bg-gray-200');
+        });
+
+        notInWishlistBtn.addEventListener('mouseleave', () => {
+            notInWishlistIcon.classList.replace('fa-solid', 'fa-regular');
+            notInWishlistBtn.classList.remove('bg-gray-200');
+        });
+    </script>
+{% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'customer_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}รายการโปรด - IT Shop{% endblock %}
+
+{% block content %}
+<div class="flex justify-center py-12 px-6">
+    <div class="max-w-7xl w-full">
+
+        <h1 class="text-2xl font-semibold">รายการโปรด</h1>
+        <p class="text-sm text-gray-400 mb-6">{{ total }} รายการ</p>
+
+        {% if products %}
+        <div class="flex flex-col gap-6">
+            {% for product in products %}
+            <div class="flex bg-white rounded-md border border-gray-200 overflow-hidden">
+                
+                <!-- image -->
+                <a href="{% url 'product_detail' product.id %}" class="w-1/4 border-r border-gray-200">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-60 object-cover">
+                    {% else %}
+                    <img src="{% static 'img/no_img.jpeg' %}" alt="" class="w-full h-60 object-cover">
+                    {% endif %}
+                </a>
+                
+                <!-- detail -->
+                <div class="w-3/4 p-6 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-2xl/7 font-bold break-words">{{ product.name }}</h2>
+                        <p class="text-gray-500 text-sm mt-1 break-words">{{ product.brand.name|default:"ไม่ระบุ" }}</p>
+
+                        {% if product.discount_type != "NONE" and product.discount_value > 0 %}
+                        <div class="flex items-center gap-3 mt-2">
+                            <p class="text-purple-600 font-semibold text-xl">
+                                ฿{{product.sale_price|floatformat:2|intcomma }}</p>
+                            <p class="text-gray-400 line-through text-sm">฿{{ product.price|floatformat:2|intcomma }}
+                            </p>
+                            <span class="text-xs text-red-500 font-medium bg-red-100 px-2 py-[1px] rounded-md">
+                                -{{ product.discount_percent|floatformat:0 }}%
+                            </span>
+                        </div>
+                        {% else %}
+                        <p class="text-purple-600 font-semibold mt-2 text-xl">฿{{ product.price|intcomma }}</p>
+                        {% endif %}
+
+                        <p class="text-gray-600 text-sm mt-4 break-words">
+                            {{ product.description|truncatechars:120|default:"ไม่มีรายละเอียด" }}</p>
+                    </div>
+
+                    <!-- btn -->
+                    <div class="flex justify-end gap-2">
+                        <a href="{% url 'product_detail' product.id %}">
+                            <button type="button"
+                                class="bg-purple-200 hover:bg-purple-300 text-purple-600 px-3 py-1 rounded-md transition duration-200 flex items-center hover:cursor-pointer">
+                                <i class="fa-solid fa-eye mr-1 text-xs"></i>ดูสินค้า
+                            </button>
+                        </a>
+
+                        <a href="{% url 'remove_from_wishlist' product.id %}">
+                            <button type="button"
+                                class="bg-red-200 hover:bg-red-300 text-red-600 px-3 py-1 rounded-md transition duration-200 flex items-center hover:cursor-pointer">
+                                <i class="fa-solid fa-trash mr-2 text-xs"></i>ลบออก
+                            </button>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center mt-12">คุณยังไม่มีรายการโปรด</p>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

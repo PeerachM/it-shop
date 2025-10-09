@@ -17,6 +17,17 @@ urlpatterns = [
     path("address/<int:id>/edit", views.EditAddressView.as_view(), name="address_edit"),
     path("address/<int:id>/delete", views.DeleteAddressView.as_view(), name="address_delete"),
 
+    path("wishlist/", views.WishlistView.as_view(), name="wishlist"),
+    path("wishlist/add/<int:id>", views.AddWishlistView.as_view(), name="add_to_wishlist"),
+    path("wishlist/remove/<int:id>", views.RemoveWishlistView.as_view(), name="remove_from_wishlist"),
+
+    path("cart/", views.CartView.as_view(), name="cart"),
+    path("cart/add/<int:id>", views.AddCartView.as_view(), name="add_to_cart"),
+    path("cart/change/<int:id>", views.ChangeCartView.as_view(), name="change_cart"),
+    path("cart/remove/<int:id>", views.RemoveCartView.as_view(), name="remove_from_cart"),
+
+
+
 
 
     path("management/", views.AdminHomeView.as_view(), name="admin_home"),

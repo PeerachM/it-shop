@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {% for product in products %}
             <a href="{% url 'product_detail' product.id %}">
                 <div
@@ -82,10 +82,10 @@
                     <div class="relative">
                         {% if product.image %}
                         <img src="{{ product.image.url }}" alt="{{ product.name }}"
-                            class="w-full h-40 object-cover rounded-lg mb-3">
+                            class="w-full h-52 object-cover rounded-lg mb-3">
                         {% else %}
                         <img src="{% static 'img/no_img.jpeg' %}" alt=""
-                            class="w-full h-40 object-cover rounded-lg mb-3">
+                            class="w-full h-52 object-cover rounded-lg mb-3">
                         {% endif %}
 
                         {% if product.discount_type != "NONE" and product.discount_value > 0 %}

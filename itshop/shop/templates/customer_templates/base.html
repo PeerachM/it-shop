@@ -45,13 +45,13 @@
 
         <div class="flex items-center gap-6">
             {% if user.is_authenticated and perms.shop.change_cartitem and perms.shop.change_customer%}
-            <a href="">
+            <a href="{% url 'wishlist' %}">
                 <button class="text-xl text-gray-400 hover:cursor-pointer hover:text-purple-600">
                     <i class="fa-solid fa-heart"></i>
                 </button>
             </a>
 
-            <a href="">
+            <a href="{% url 'cart' %}">
                 <button class="text-xl text-gray-400 hover:cursor-pointer hover:text-purple-600">
                     <i class="fa-solid fa-cart-shopping"></i>
                 </button>
