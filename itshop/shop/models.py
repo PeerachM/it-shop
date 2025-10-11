@@ -32,12 +32,6 @@ class Product(models.Model):
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, default=0)
     is_active = models.BooleanField(default=True)
 
-    def sale_price(self):
-        if self.discount_type == "PERCENT":
-            return self.price * (1 - self.discount_value / 100)
-        elif self.discount_type == "FIXED":
-            return self.price - self.discount_value
-        return self.price
     def discount_percent(self):
         if self.discount_type == "PERCENT":
             return self.discount_value

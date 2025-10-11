@@ -18,6 +18,9 @@ def is_admin(user):
 def check_in_wishlist(customer, product_id):
     return customer.wishlist.filter(id=product_id).exists()
 
+def is_cartitem_owner(customer, cartitem):
+    return cartitem.objects.filter(customer=customer).exists()
+
 class RegisterView(View):
     def get(self, request):
         reg_form = CustomUserCreationForm()
@@ -90,7 +93,13 @@ class ProductListView(View):
         brand = request.GET.get("brand", "all")
         orderby = request.GET.get("sort", "name")
 
-        products = Product.objects.filter(name__icontains=search, is_active=True).order_by(orderby)
+        products = Product.objects.filter(name__icontains=search, is_active=True).annotate(
+            sale_price=Case(
+                When(discount_type="NONE", then=F("price")),
+                When(discount_type="PERCENT", then=(F("price") * (1 - F("discount_value") / 100))),
+                When(discount_type="FIXED", then=(F("price") - F("discount_value"))),
+            )
+        ).order_by(orderby)
         if category!="all":
             products = products.filter(category__name=category)
         if brand!="all":
@@ -114,9 +123,15 @@ class ProductListView(View):
     
 class ProductDetailView(View):
     def get(self, request, id):
-        product = Product.objects.get(id=id)
+        product = Product.objects.filter(id=id, is_active=True).annotate(
+            sale_price=Case(
+                When(discount_type="NONE", then=F("price")),
+                When(discount_type="PERCENT", then=(F("price") * (1 - F("discount_value") / 100))),
+                When(discount_type="FIXED", then=(F("price") - F("discount_value"))),
+            )
+        ).first()
         in_wishlist = False
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and not is_admin(request.user):
             customer = Customer.objects.get(user=request.user)
             # check ว่ามีอยู่ในรายการ wishlist ไหม
             in_wishlist = check_in_wishlist(customer, product.id)
@@ -218,7 +233,7 @@ class WishlistView(PermissionRequiredMixin, View):
 class AddWishlistView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_customer"]
     def get(self, request, id):
-        product = Product.objects.get(id=id)
+        product = Product.objects.get(id=id, is_active=True)
         customer = Customer.objects.get(user=request.user)
         # check ว่ามีอยู่ในรายการ wishlist ไหม
         in_wishlist = check_in_wishlist(customer, product.id)
@@ -229,7 +244,7 @@ class AddWishlistView(PermissionRequiredMixin, View):
 class RemoveWishlistView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_customer"]
     def get(self, request, id):
-        product = Product.objects.get(id=id)
+        product = Product.objects.get(id=id, is_active=True)
         customer = Customer.objects.get(user=request.user)
         # check ว่ามีอยู่ในรายการ wishlist ไหม
         in_wishlist = check_in_wishlist(customer, product.id)
@@ -251,10 +266,9 @@ class CartView(PermissionRequiredMixin, View):
                 When(product__discount_type="PERCENT", then=(F("product__price") * (1 - F("product__discount_value") / 100))),
                 When(product__discount_type="FIXED", then=(F("product__price") - F("product__discount_value"))),
             ), 
-            discount_amount = F("product__price") - F("sale_price"),
-            total_sale_price = F("sale_price") * F("quantity")
+            subtotal = F("sale_price") * F("quantity")
         )
-        total = cart_items.aggregate(total=Sum("total_sale_price"))["total"]
+        total = cart_items.aggregate(total=Sum("subtotal"))["total"]
         context = {
             "cart_items": cart_items,
             "total": total
@@ -263,18 +277,45 @@ class CartView(PermissionRequiredMixin, View):
     
 class AddCartView(PermissionRequiredMixin, View):
     permission_required = ["shop.add_cartitem"]
-    def get(self, request):
-        return redirect("wishlist")
+    def post(self, request, id):
+        customer = Customer.objects.get(user=request.user)
+        product =  Product.objects.get(id=id, is_active=True)
+        quantity = int(request.POST.get("quantity"))
+        # เช็คว่ามี product นั้น อยู่ใน cart อยู่แล้วไหม ถ้ามี ให้ update quantity
+        try:
+            cart_item = CartItem.objects.get(customer=customer, product=product)
+            cart_item.quantity += quantity
+            # ไม่ให้เกิน stock และไม่ให้น้อยกว่า 1
+            cart_item.quantity = max(1, min(cart_item.quantity, product.stock))
+            cart_item.save()
+        except CartItem.DoesNotExist:
+            # ไม่ให้เกิน stock และไม่ให้น้อยกว่า 1
+            quantity = max(1, min(quantity, product.stock))
+            cart_item = CartItem.objects.create(customer=customer, product=product, quantity=quantity)
+        return redirect("cart")
     
 class RemoveCartView(PermissionRequiredMixin, View):
     permission_required = ["shop.delete_cartitem"]
-    def get(self, request):
-        return redirect("wishlist")
+    def get(self, request, id):
+        cart_item = CartItem.objects.get(id=id)
+        if cart_item.customer != request.user.customer:
+            raise PermissionDenied()
+        cart_item.delete()
+        
+        return redirect("cart")
     
 class ChangeCartView(PermissionRequiredMixin, View):
     permission_required = ["shop.change_cartitem"]
-    def get(self, request):
-        return redirect("wishlist")
+    def post(self, request, id):
+        cart_item = CartItem.objects.get(id=id)
+        if cart_item.customer != request.user.customer:
+            raise PermissionDenied()
+        quantity = int(request.POST.get("quantity"))
+        # ไม่ให้เกิน stock และไม่ให้น้อยกว่า 1
+        quantity = max(1, min(quantity, cart_item.product.stock))
+        cart_item.quantity = quantity
+        cart_item.save()
+        return redirect("cart")
 
 
 # ---ADMIN---
@@ -296,7 +337,13 @@ class ProductView(PermissionRequiredMixin, View):
         if not is_admin(request.user):
             raise PermissionDenied("Only for Admin.")
         
-        products = Product.objects.all()
+        products = Product.objects.annotate(
+            sale_price=Case(
+                When(discount_type="NONE", then=F("price")),
+                When(discount_type="PERCENT", then=(F("price") * (1 - F("discount_value") / 100))),
+                When(discount_type="FIXED", then=(F("price") - F("discount_value"))),
+            )
+        )
         context = {"products": products}
         return render(request, "admin_templates/product_list.html", context)
 

@@ -68,8 +68,8 @@
                 <select id="sort-select" class="!px-2 !py-1 !w-2/3 text-sm text-gray-800">
                     <option value="name" {% if request.GET.sort == "name"%} selected {% endif %}>ชื่อ A - Z</option>
                     <option value="-name" {% if request.GET.sort == "-name" %} selected {% endif %}>ชื่อ Z - A</option>
-                    <option value="price" {% if request.GET.sort == "price" %} selected {% endif %}>ราคาต่ำ - สูง</option>
-                    <option value="-price" {% if request.GET.sort == "-price" %} selected {% endif %}>ราคาสูง - ต่ำ</option>
+                    <option value="sale_price" {% if request.GET.sort == "sale_price" %} selected {% endif %}>ราคาต่ำ - สูง</option>
+                    <option value="-sale_price" {% if request.GET.sort == "-sale_price" %} selected {% endif %}>ราคาสูง - ต่ำ</option>
                 </select>
             </div>
         </div>
