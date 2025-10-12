@@ -47,4 +47,10 @@ urlpatterns = [
     path("management/brand/create/", views.CreateBrandView.as_view(), name="brand_create"),
     path("management/brand/<int:id>/edit/", views.EditBrandView.as_view(), name="brand_edit"),
     path("management/brand/<int:id>/delete/", views.DeleteBrandView.as_view(), name="brand_delete"),
+
+    path("management/code/", views.CodeView.as_view(), name="code"),
+    path("management/code/create/", views.CreateCodeView.as_view(), name="code_create"),
+    path("management/code/<int:id>/edit/", views.EditCodeView.as_view(), name="code_edit"),
+    path("management/code/<int:id>/activate/", views.ActivateCodeView.as_view(), name="code_activate"),
+    path("management/code/<int:id>/deactivate/", views.DeactivateCodeView.as_view(), name="code_deactivate"),
 ]

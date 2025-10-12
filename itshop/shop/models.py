@@ -68,7 +68,7 @@ class DiscountCode(models.Model):
     code_type = models.CharField(max_length=8, choices=CodeType.choices)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     start_date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

@@ -491,3 +491,60 @@ class DeleteBrandView(PermissionRequiredMixin, View):
         brand = Brand.objects.get(id=id)
         brand.delete()
         return redirect("brand")
+
+
+# DICOUNT CODE
+class CodeView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_discountcode",]
+    def get(self, request):
+        discount_codes = DiscountCode.objects.all().order_by('-start_date')
+        context = {"discount_codes": discount_codes}
+        return render(request, "admin_templates/discount_code_list.html", context)
+
+class CreateCodeView(PermissionRequiredMixin, View):
+    permission_required = ["shop.add_discountcode",]
+    def get(self, request):
+        code_form = DicountCodeForm()
+        context = {'form': code_form}
+        return render(request, "admin_templates/discount_code_create.html", context)
+    
+    def post(self, request):
+        code_form = DicountCodeForm(request.POST)
+        if code_form.is_valid():
+            code_form.save()
+            return redirect("code")
+        context = {'form': code_form}
+        return render(request, "admin_templates/discount_code_create.html", context)
+
+class EditCodeView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_discountcode",]
+    def get(self, request, id):
+        code = DiscountCode.objects.get(id=id)
+        code_form = DicountCodeForm(instance=code)
+        context = {'form': code_form}
+        return render(request, "admin_templates/discount_code_edit.html", context)
+    
+    def post(self, request, id):
+        code = DiscountCode.objects.get(id=id)
+        code_form = DicountCodeForm(request.POST, instance=code)
+        if code_form.is_valid():
+            code_form.save()
+            return redirect("code")
+        context = {'form': code_form}
+        return render(request, "admin_templates/discount_code_edit.html", context)
+    
+class ActivateCodeView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_discountcode",]
+    def post(self, request, id):
+        code = DiscountCode.objects.get(id=id)
+        code.is_active = True;
+        code.save()
+        return redirect('code_edit', id=id)
+
+class DeactivateCodeView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_discountcode",]
+    def post(self, request, id):
+        code = DiscountCode.objects.get(id=id)
+        code.is_active = False;
+        code.save()
+        return redirect('code_edit', id=id)

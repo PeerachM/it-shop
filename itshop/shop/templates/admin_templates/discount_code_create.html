@@ -1,0 +1,129 @@
+{% extends 'admin_templates/base.html' %}
+
+{% block title %} เพิ่มโค้ดส่วนลด - IT Shop {% endblock %}
+
+{% block code_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-ticket me-2"></i>
+    <span class="font-regular">โค้ดส่วนลด</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex items-center gap-1">
+    <a href="{% url 'code' %}">
+        <button type="button"
+            class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
+            <i class="fa-solid fa-angle-left text-sm"></i>
+        </button>
+    </a>
+    <h1 class="text-2xl ms-1 text-gray-600">เพิ่มโค้ดส่วนลด</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="px-12 py-10">
+    {{ form.non_field_errors }}
+    <form method="POST" class="py-3">
+        {% csrf_token %}
+
+        <div class="flex gap-5">
+            <div class="w-4/6 border border-gray-200 p-5 rounded-md">
+                <div class="pt-3 pb-1">
+                    <label for="{{form.code.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">รหัสโค้ด</label>
+                    {{ form.code }}
+                    <div class="text-red-400 p-2">
+                        <ul>
+                            {% for error in form.code.errors %}
+                            <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="pb-1">
+                    <label for="{{form.code_type.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">ประเภทส่วนลด</label>
+                    {{ form.code_type }}
+                    <div class="text-red-400 p-2">
+                        <ul>
+                            {% for error in form.code_type.errors %}
+                            <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="pb-1">
+                    <label for="{{form.value.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">มูลค่าส่วนลด</label>
+                    {{ form.value }}
+                    <div class="text-red-400 p-2">
+                        <ul>
+                            {% for error in form.value.errors %}
+                            <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-2/6 border border-gray-200 p-5 rounded-md flex flex-col">
+                <div class="pt-3">
+                    <label for="{{form.start_date.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">วันที่เริ่มต้น</label>
+                    {{ form.start_date }}
+                    <div class="text-red-400 p-2">
+                        {% for error in form.start_date.errors %}
+                        <div><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <label for="{{form.end_date.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">วันที่สิ้นสุด (optional)</label>
+                    {{ form.end_date }}
+                    <div class="text-red-400 p-2">
+                        {% for error in form.end_date.errors %}
+                        <div><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <label for="{{form.min_order_amount.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">ยอดสั่งซื้อขั้นต่ำ</label>
+                    {{ form.min_order_amount }}
+                    <div class="text-red-400 p-2">
+                        {% for error in form.min_order_amount.errors %}
+                        <div><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <label for="{{form.max_discount_amount.id_for_label}}"
+                        class="block font-medium text-gray-700 mb-1">ส่วนลดสูงสุด (optional)</label>
+                    {{ form.max_discount_amount }}
+                    <div class="text-red-400 p-2">
+                        {% for error in form.max_discount_amount.errors %}
+                        <div><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 py-3 text-right">
+            <a href="{% url 'code' %}">
+                <button type="button"
+                    class="border border-gray-300 hover:bg-gray-100 text-gray-400 px-6 py-2 rounded-md hover:cursor-pointer">
+                    ยกเลิก
+                </button>
+            </a>
+            <button type="submit"
+                class="bg-purple-700 hover:bg-purple-600 text-white px-12 py-2 rounded-md hover:cursor-pointer">
+                เพิ่ม
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

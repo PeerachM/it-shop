@@ -79,3 +79,40 @@ class BrandForm(ModelForm):
         widgets = {
             "description": Textarea(attrs={"rows": 2})
         }
+
+class DicountCodeForm(ModelForm):
+    class Meta:
+        model = DiscountCode
+        exclude = ["usage_count", "is_active"]
+        widgets = {
+            "start_date": DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_date": DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+
+    def clean_value(self):
+        value = self.cleaned_data.get("value")
+        code_type = self.cleaned_data.get("code_type")
+        if value is None or value <= 0:
+            raise forms.ValidationError("ค่าลดต้องมากกว่า 0")
+        if code_type == DiscountCode.CodeType.PERCENT and value > 100:
+            raise forms.ValidationError("เปอร์เซ็นต์ส่วนลดต้องไม่เกิน 100")
+        return value
+
+    def clean_end_date(self):
+        start_date = self.cleaned_data.get("start_date")
+        end_date = self.cleaned_data.get("end_date")
+        if start_date and end_date and start_date >= end_date:
+            raise forms.ValidationError("วันหมดอายุต้องมากกว่าวันเริ่ม")
+        return end_date
+
+    def clean_max_discount_amount(self):
+        max_discount = self.cleaned_data.get("max_discount_amount")
+        if max_discount is not None and max_discount < 0:
+            raise forms.ValidationError("จำนวนส่วนลดสูงสุดต้องมากกว่า 0")
+        return max_discount
+    
+    def clean_min_order_amount(self):
+        min_amount = self.cleaned_data.get("min_order_amount")
+        if min_amount is not None and min_amount < 0:
+            raise forms.ValidationError("ยอดสั่งซื้อต่ำสุดต้องไม่ติดลบ")
+        return min_amount
