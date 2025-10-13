@@ -1,0 +1,130 @@
+{% extends 'customer_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %} สรุปคำสั่งซื้อ - IT Shop {% endblock %}
+
+{% block content %}
+<div class="flex justify-center py-12 px-6">
+    <div class="max-w-5xl w-full flex flex-col gap-8">
+
+        <!-- cart item -->
+        <div class="bg-white p-12 rounded-md border border-gray-200">
+            <h1 class="text-2xl font-semibold mb-6">สรุปคำสั่งซื้อ</h1>
+
+            {% if cart_items %}
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-300">
+                        <th class="p-3">สินค้า</th>
+                        <th class="p-3">ราคา</th>
+                        <th class="p-3">จำนวน</th>
+                        <th class="p-3">รวม</th>
+                    </tr>
+                </thead>
+                <tbody class="border-b border-gray-300">
+                    {% for item in cart_items %}
+                    <tr class="border-b border-gray-200">
+                        <td class="p-3 flex items-center gap-4">
+                            {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                                class="w-16 h-16 object-cover rounded-md">
+                            {% else %}
+                            <img src="{% static 'img/no_img.jpeg' %}" alt="" class="w-16 h-16 object-cover rounded-md">
+                            {% endif %}
+                            <p>{{ item.product.name|truncatechars:25 }}</p>
+                        </td>
+                        <td class="p-3">
+                            ฿{{ item.sale_price|floatformat:2|intcomma }}
+                        </td>
+                        <td class="p-3">{{ item.quantity }}</td>
+                        <td class="p-3 font-semibold">
+                            ฿{{ item.subtotal|floatformat:2|intcomma }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-gray-500 text-center mt-12">ไม่มีสินค้าในตะกร้า</p>
+            {% endif %}
+        </div>
+        <form method="POST" class="bg-white p-12 rounded-md border border-gray-200">
+            {% csrf_token %}
+
+            <!-- code -->
+             <div class="p-6 rounded-md border border-gray-200 mb-4">
+                <label for="discount_code" class="block font-medium mb-2">โค้ดส่วนลด:</label>
+                <div class="flex gap-3 items-center mb-4">
+                    {% if discount_code %}
+                    <input type="text" id="discount_code" name="discount_code" placeholder="ใส่โค้ดส่วนลด"  readonly
+                        value="{{ discount_code }}" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-600">
+                    <button type="submit" name="action" value="clear_code"
+                        class="border border-purple-600 hover:border-purple-500 text-purple-600 px-4 py-2 rounded-md hover:cursor-pointer">
+                        ยกเลิก
+                    </button>
+                    {% else %}
+                    <input type="text" id="discount_code" name="discount_code" placeholder="ใส่โค้ดส่วนลด"
+                        value="" class="flex-1 border border-gray-300 rounded-md px-3 py-2">
+                    <button type="submit" name="action" value="apply_code"
+                        class="border border-purple-600 hover:border-purple-500 text-purple-600 px-4 py-2 rounded-md hover:cursor-pointer">
+                        ใช้โค้ด
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- address -->
+                <div class="flex justify-between mt-8">
+                    <label for="address" class="block font-medium mb-2">ที่อยู่จัดส่ง:</label> 
+                    <a href="{% url 'address' %}" class="text-sm text-purple-500 hover:text-purple-600">เพิ่มที่อยู่ใหม่</a>
+                </div>
+                <select id="address" name="address_id" class="w-full border border-gray-300 rounded-md px-3 py-2 mb-6">
+                    {% for address in addresses %}
+                    <option value="{{ address.id }}" title="{{ address }}" {%if address.id == address_id %}selected{% endif %}>{{address|truncatechars:140}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- sum -->
+            <div class="text-right mb-4 p-5 rounded-md border border-gray-200">
+                <p>รวมทั้งหมด: ฿{{ total|floatformat:2|intcomma }}</p>
+                <p>ส่วนลด: ฿{{ discount_amount|floatformat:2|intcomma }}</p>
+                <p><strong>ยอดสุทธิ: ฿{{ total_after_discount|floatformat:2|intcomma }}</strong></p>
+            </div>
+
+
+
+            <button type="submit" name="action" value="checkout"
+                class="w-full bg-purple-700 hover:bg-purple-600 text-white px-6 py-3 rounded-md text-center hover:cursor-pointer">
+                ชำระเงิน
+            </button>
+        </form>
+
+    </div>
+</div>
+
+
+{% if messages %}
+<div id="messageModal" class="fixed inset-0 flex items-center justify-center bg-black/5 z-50">
+    <div class="bg-white rounded-xl w-96 p-6 text-center border border-gray-200">
+            <div class="mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-4xl"></i>
+                <h2 class="text-lg font-semibold text-red-600 mb-4">เกิดข้อผิดพลาด</h2>
+                {% for message in messages %}
+                <p class="text-gray-700">{{ message }}</p>
+                {% endfor %}
+            </div>
+        <button onclick="closeModal()" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 hover:cursor-pointer">
+                ปิด
+        </button>
+    </div>
+</div>
+<script>
+    const modal = document.getElementById("messageModal");
+    function closeModal() {
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+    }
+</script>
+{% endif %}
+
+{% endblock %}

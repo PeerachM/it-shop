@@ -79,6 +79,63 @@
                         </td>
                     </tr>
                     {% endfor %}
+
+                    <!-- แสดงสินค้าที่หมด หรือ ไม่ได้วางขาย แต่ยังอยู่ใน cart -->
+                    {% for item in ex_cart_items %}
+                    <tr class="border-b border-gray-200 text-gray-400">
+                        
+                        <td class="p-3 flex items-center gap-4">
+                            <a href="{% if not item.product.stock %}{% url 'product_detail' item.product.id%}{% endif %}" class="relative">
+                                {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name}}"
+                                    class="w-16 h-16 object-cover rounded-md">
+                                {% else %}
+                                <img src="{% static 'img/no_img.jpeg' %}" alt="" class="w-16 h-16 object-cover rounded-md">
+                                {% endif %}
+                                <span
+                                    class="absolute bottom-0 right-0 p-1 text-xs font-semibold bg-red-400 text-white rounded-md text-center shadow-sm">
+                                    {% if not item.product.is_active %}ไม่วางขาย{% elif not item.product.stock %}สินค้าหมด{% endif %}
+                                </span>
+                            </a>
+                            <div>
+                                <a href="{% if not item.product.stock %}{% url 'product_detail' item.product.id%}{% endif %}">
+                                    <p class="font-semibold break-words">{{item.product.name|truncatechars:20}}</p>
+                                </a>
+                                <p class="text-gray-500 text-sm break-words">{{item.product.brand.name|default:"ไม่ระบุ"}}</p>
+                            </div>
+                            
+                        </td>
+                        <td class="p-3 text-gray-100">
+                            {% if not item.product.is_active %}
+                            ไม่วางขาย
+                            {% elif not item.product.stock %}
+                            สินค้าหมด
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-gray-100">
+                            {% if not item.product.is_active %}
+                            ไม่วางขาย
+                            {% elif not item.product.stock %}
+                            สินค้าหมด
+                            {% endif %}
+                        </td>
+                        <td class="p-3 font-semibold text-gray-100">
+                            {% if not item.product.is_active %}
+                            ไม่วางขาย
+                            {% elif not item.product.stock %}
+                            สินค้าหมด
+                            {% endif %}
+                        </td>
+                        <td class="p-3">
+                            <a href="{% url 'remove_from_cart' item.id %}"
+                                class="text-red-500 hover:text-red-600 font-semibold">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+
                 </tbody>
             </table>
             {% else %}
@@ -95,7 +152,7 @@
                     <span class="text-purple-600">฿{{ total|floatformat:2|intcomma }}</span>
                 </div>
             </div>
-            <a href=""
+            <a href="{% url 'checkout'%}"
                 class="mt-6 bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-3 rounded-md transition duration-200 text-center">
                 สั่งซื้อสินค้า
             </a>
@@ -103,4 +160,28 @@
 
     </div>
 </div>
+
+{% if messages %}
+<div id="messageModal" class="fixed inset-0 flex items-center justify-center bg-black/5 z-50">
+    <div class="bg-white rounded-xl w-96 p-6 text-center border border-gray-200">
+            <div class="mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-4xl"></i>
+                <h2 class="text-lg font-semibold text-red-600 mb-4">เกิดข้อผิดพลาด</h2>
+                {% for message in messages %}
+                <p class="text-gray-700">{{ message }}</p>
+                {% endfor %}
+            </div>
+        <button onclick="closeModal()" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 hover:cursor-pointer">
+                ปิด
+        </button>
+    </div>
+</div>
+<script>
+    const modal = document.getElementById("messageModal");
+    function closeModal() {
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+    }
+</script>
+{% endif %}
 {% endblock %}

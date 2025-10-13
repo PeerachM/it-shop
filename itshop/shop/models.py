@@ -55,6 +55,9 @@ class Address(models.Model):
     province = models.CharField(max_length=50)
     postal_code = models.CharField(max_length=5)
 
+    def __str__(self):
+        return f"{self.full_name} ({self.phone}) - {self.address}, {self.sub_district}, {self.district}, {self.province}, {self.postal_code}"
+
 class CartItem(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -80,19 +83,20 @@ class Order(models.Model):
         SHIPPING = "SHIPPING", "กำลังจัดส่ง"
         DELIVERED = "DELIVERED", "จัดส่งสำเร็จ"
         CANCELLED = "CANCELLED", "ยกเลิกคำสั่งซื้อ"
-    cutomer = models.OneToOneField(Customer, on_delete=models.CASCADE)
-    dicount_code = models.OneToOneField(DiscountCode, on_delete=models.PROTECT, null=True, blank=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    discount_code = models.ForeignKey(DiscountCode, on_delete=models.PROTECT, null=True, blank=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_address = models.TextField()
     order_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=OrderStatus.choices)
 
 class OrderItem(models.Model):
-    order = models.OneToOneField(Order, on_delete=models.CASCADE)
-    product = models.OneToOneField(Product, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-    dicount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 class Payment(models.Model):
     class PaymentStatus(models.TextChoices):

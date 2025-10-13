@@ -5,12 +5,16 @@ from .models import *
 from .forms import *
 from django.contrib.auth.models import Group
 
-from django.db.models import Count, Sum, Case, When, F
+from django.db.models import Count, Sum, Case, When, F, Q
 
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
+
+from django.contrib import messages
+from django.utils import timezone
+from django.db import transaction
 
 def is_admin(user):
     return user.groups.filter(name="admin").exists()
@@ -20,6 +24,18 @@ def check_in_wishlist(customer, product_id):
 
 def is_cartitem_owner(customer, cartitem):
     return cartitem.objects.filter(customer=customer).exists()
+
+def get_cart_items(customer):
+    cart_items = CartItem.objects.filter(customer=customer, product__is_active=True, product__stock__gt=0).annotate(
+        sale_price=Case(
+            When(product__discount_type="NONE", then=F("product__price")),
+            When(product__discount_type="PERCENT", then=(F("product__price") * (1 - F("product__discount_value") / 100))),
+            When(product__discount_type="FIXED", then=(F("product__price") - F("product__discount_value"))),
+        ), 
+        subtotal = F("sale_price") * F("quantity")
+    )
+    total = cart_items.aggregate(total=Sum("subtotal"))["total"]
+    return cart_items, total
 
 class RegisterView(View):
     def get(self, request):
@@ -260,17 +276,11 @@ class CartView(PermissionRequiredMixin, View):
     permission_required = ["shop.view_cartitem", "shop.change_cartitem"]
     def get(self, request):
         customer = Customer.objects.get(user=request.user)
-        cart_items = CartItem.objects.filter(customer=customer).annotate(
-            sale_price=Case(
-                When(product__discount_type="NONE", then=F("product__price")),
-                When(product__discount_type="PERCENT", then=(F("product__price") * (1 - F("product__discount_value") / 100))),
-                When(product__discount_type="FIXED", then=(F("product__price") - F("product__discount_value"))),
-            ), 
-            subtotal = F("sale_price") * F("quantity")
-        )
-        total = cart_items.aggregate(total=Sum("subtotal"))["total"]
+        cart_items, total = get_cart_items(customer)
+        ex_cart_items = CartItem.objects.filter(Q(customer=customer), (Q(product__is_active=False) |  Q(product__stock=0)))
         context = {
             "cart_items": cart_items,
+            "ex_cart_items": ex_cart_items,
             "total": total
         }
         return render(request, "customer_templates/cart.html", context)
@@ -279,7 +289,7 @@ class AddCartView(PermissionRequiredMixin, View):
     permission_required = ["shop.add_cartitem"]
     def post(self, request, id):
         customer = Customer.objects.get(user=request.user)
-        product =  Product.objects.get(id=id, is_active=True)
+        product =  Product.objects.get(id=id, is_active=True, stock__gt=0)
         quantity = int(request.POST.get("quantity"))
         # เช็คว่ามี product นั้น อยู่ใน cart อยู่แล้วไหม ถ้ามี ให้ update quantity
         try:
@@ -316,6 +326,231 @@ class ChangeCartView(PermissionRequiredMixin, View):
         cart_item.quantity = quantity
         cart_item.save()
         return redirect("cart")
+
+
+# CHECKOUT
+class CheckoutView(PermissionRequiredMixin, View):
+    permission_required = ["shop.add_order"]
+    def get(self, request):
+        customer = Customer.objects.get(user=request.user)
+        cart_items, total = get_cart_items(customer)
+        addresses = Address.objects.filter(customer=customer)
+
+        if not cart_items.exists():
+            return redirect("cart")
+        
+        context = {
+            "cart_items": cart_items,
+            "addresses": addresses,
+            "total": total,
+            "discount_code": "",
+            "discount_amount": 0,
+            "total_after_discount": total,
+        }
+        return render(request, "customer_templates/checkout.html", context)
+
+    def post(self, request):
+        customer = Customer.objects.get(user=request.user)
+        cart_items, total = get_cart_items(customer)
+        addresses = Address.objects.filter(customer=customer)
+
+        code = request.POST.get("discount_code", "").strip()
+        address_id = int(request.POST.get("address_id"))
+        discount_amount = 0
+        discount_code = None
+
+        action = request.POST.get("action")
+        # ถ้ากด ใช้โค้ด
+        if action=="apply_code":
+            if not code:
+                messages.error(request, "กรุณาใส่โค้ดส่วนลด")
+            else:
+                discount_code, discount_amount = self.validate_discount_code(code, total)
+            context = {
+                "cart_items": cart_items,
+                "addresses": addresses,
+                "address_id": address_id,
+                "total": total,
+                "discount_code": code if discount_code else None,
+                "discount_amount": discount_amount,
+                "total_after_discount": total - discount_amount,
+            }
+            return render(request, "customer_templates/checkout.html", context)
+        
+
+        # ถ้ากด ยกเลิกใช้โค้ด
+        if action=="clear_code":
+            context = {
+                "cart_items": cart_items,
+                "addresses": addresses,
+                "address_id": address_id,
+                "total": total,
+                "discount_code": None,
+                "discount_amount": 0,
+                "total_after_discount": total - discount_amount,
+            }
+            return render(request, "customer_templates/checkout.html", context)
+
+
+        # ถ้ากด ชำระเงิน
+        elif action=="checkout":
+            # ตรวจสอบโค้ดส่วนลดอีกครั้ง
+            print("code", code)
+            if code:
+                discount_code, discount_amount = self.validate_discount_code(code, total)
+            print("amount",discount_code, discount_amount)
+
+            address = Address.objects.filter(id=address_id, customer=customer).first()
+            if not address:
+                messages.error(request, "กรุณาเลือกที่อยู่จัดส่ง")
+                context = {
+                    "cart_items": cart_items,
+                    "addresses": addresses,
+                    "address_id": address_id,
+                    "total": total,
+                    "discount_code": code if discount_code else None,
+                    "discount_amount": discount_amount,
+                    "total_after_discount": total - discount_amount,
+                }
+                return render(request, "customer_templates/checkout.html", context)
+
+            if not cart_items.exists():
+                return redirect("cart")
+            try:
+                with transaction.atomic():
+                    order = Order.objects.create(
+                        customer=customer,
+                        discount_code=discount_code,
+                        discount_amount=discount_amount,
+                        total_price=total,
+                        shipping_address=str(address),
+                        status=Order.OrderStatus.PENDING,
+                    )
+                    for item in cart_items:
+                        product = item.product
+                        # ตรวจ stock ก่อนหัก
+                        if product.stock < item.quantity:
+                            raise ValueError(f"สินค้า {product.name} มีไม่พอในคลัง")
+
+                        OrderItem.objects.create(
+                            order=order,
+                            product=product,
+                            quantity=item.quantity,
+                            unit_price=item.product.price,
+                            discount_price=item.product.price-item.sale_price,
+                        )
+
+                        # ลด stock
+                        product.stock = F("stock") - item.quantity
+                        product.save()
+
+                    # เพิ่ม usage code
+                    if discount_code:
+                        discount_code.usage_count = F("usage_count") + 1
+                        discount_code.save()
+
+                    # ล้างตะกร้า
+                    cart_items.delete()
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect("cart")
+
+            return redirect("payment", order.id)
+
+    def validate_discount_code(self, code, total):
+        # ตรวจสอบว่าโค้ดส่วนลดใช้ได้ไหม
+        try:
+            discount_code = DiscountCode.objects.get(code=code, is_active=True)
+            now = timezone.now()
+            if now < discount_code.start_date:
+                messages.error(self.request, "โค้ดนี้ยังไม่ถึงเวลาที่สามารถใช้ได้")
+                return None, 0
+            if discount_code.end_date and now > discount_code.end_date:
+                messages.error(self.request, "โค้ดนี้หมดอายุไปแล้ว")
+                return None, 0
+            if total < discount_code.min_order_amount:
+                messages.error(self.request, f"ยอดสั่งซื้อต้องเกิน {discount_code.min_order_amount} บาท ถึงใช้โค้ดนี้ได้")
+                return None, 0
+
+            discount_amount = self.calculate_discount(total, discount_code)
+            return discount_code, discount_amount
+        except DiscountCode.DoesNotExist:
+            messages.error(self.request, "โค้ดส่วนลดไม่ถูกต้อง")
+            return None, 0
+
+    def calculate_discount(self, total, discount_code):
+        # คำนวณส่วนลด
+        if discount_code.code_type == DiscountCode.CodeType.PERCENT:
+            discount = (discount_code.value / 100) * total
+        elif discount_code.code_type == DiscountCode.CodeType.FIXED:
+            discount = discount_code.value
+
+        if discount_code.max_discount_amount:
+            discount = min(discount, discount_code.max_discount_amount)
+        
+        return min(discount, total)
+
+
+# PAYMENT
+class PaymentView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_payment", "shop.add_payment"]
+    def get(self, request, id):
+        order = Order.objects.filter(id=id).annotate(final_price=F("total_price")-F("discount_amount")).first()
+        if order.customer != request.user.customer:
+            raise PermissionDenied()
+        form = PaymentForm()
+        context = {
+            "order": order,
+            "form": form,
+        }
+        return render(request, "customer_templates/payment.html", context)
+
+    def post(self, request, id):
+        order = Order.objects.get(id=id)
+        if order.customer != request.user.customer:
+            raise PermissionDenied()
+        form = PaymentForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.order = order
+            payment.status = Payment.PaymentStatus.PENDING
+            payment.save()
+
+            return redirect("product_list")
+            # return redirect("order_detail", order_id=order.id)
+        context = {
+            "order": order,
+            "form": form
+        }
+        return render(request, "customer_templates/payment.html", context)
+
+
+# ORDER (cutomer)
+class OrderListView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_order", "shop.add_payment"]
+    def get(self, request):
+        customer = Customer.objects.get(user=request.user)
+        orders = Order.objects.filter(customer=customer).annotate(final_price=F("total_price")-F("discount_amount")).order_by("-order_date")
+        status = request.GET.get("status", "ALL")
+        if status == "UNPAID":
+            orders = orders.filter(payment__isnull=True).exclude(status="CANCELLED")
+        elif status == "PENDING":
+            orders = orders.filter(payment__status="PENDING").exclude(status="CANCELLED")
+        elif status != "ALL":
+            orders = orders.filter(status=status)
+        context = {
+            "orders": orders,
+        }
+        return render(request, "customer_templates/order_list.html", context)
+
+
+
+
+
+
+
+
 
 
 # ---ADMIN---

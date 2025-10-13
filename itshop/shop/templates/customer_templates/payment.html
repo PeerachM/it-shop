@@ -1,0 +1,96 @@
+{% extends 'customer_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %} ชำระเงิน - IT Shop {% endblock %}
+
+{% block content %}
+<div class="flex justify-center max-w-7xl mx-auto py-10 gap-4">
+    <div class=" w-1/2 bg-white rounded-md border border-gray-200 p-12">
+        <h1 class="text-2xl font-semibold mb-4">ชำระเงินสำหรับคำสั่งซื้อ #{{ order.id }}</h1>
+
+        <div class="p-6 rounded-md border border-gray-200 mb-4 text-center">
+            <p class="text-xl">ยอดที่ต้องชำระ: {{ order.final_price|floatformat:2|intcomma }} ฿</p>
+        </div>
+
+        <div class="text-center mb-6 p-6 rounded-md border border-gray-200">
+            <p class="mb-2 text-gray-600">สแกนเพื่อชำระเงิน</p>
+            <img src="{% static 'img/qr-code.jpg' %}" alt="QR Code"
+                class="mx-auto w-72 h-96 rounded-md border border-gray-200">
+        </div>
+    </div>
+    <div class="w-1/2 bg-white rounded-md border border-gray-200 p-12">
+        <h1 class="text-2xl font-semibold mb-4">ส่งหลักฐานการชำระเงิน</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-6 p-6 rounded-md border border-gray-200">
+                <div>
+                    <p class="mb-1 text-gray-700">รูปภาพหลักฐานชำระเงิน</p>
+                    <img id="preview" class="hidden object-cover w-64 rounded-md border border-gray-300 mb-2">
+                    <label for="{{ form.slip_image.id_for_label }}"
+                        class="inline-block border border-gray-200 rounded-md p-2 text-center text-gray-600 hover:border-gray-400 hover:text-gray-800 hover:cursor-pointer">
+                        อัพโหลดรูปภาพ
+                    </label>
+                    {{form.slip_image}}
+                    <ul>
+                        {% for error in form.slip_image.errors %}
+                        <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mb-6 p-6 rounded-md border border-gray-200">
+                <div>
+                    <label class="block mb-1 text-gray-700"">ยอดเงินที่ชำระ</label>
+                    {{ form.amount }}
+                    <ul>
+                        {% for error in form.amount.errors %}
+                        <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div>
+                    <label class="block mt-3 mb-1 text-gray-700"">วันและเวลาที่โอนเงินตามหลักฐานชำระเงิน</label>
+                    {{ form.payment_date }}
+                    <ul>
+                        {% for error in form.payment_date.errors %}
+                        <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-4 py-3 text-right">
+                <a href="{% url 'order_list' %}">
+                    <button type="button"
+                        class="border border-gray-300 hover:bg-gray-100 text-gray-400 px-6 py-2 rounded-md hover:cursor-pointer">
+                        ออก
+                    </button>
+                </a>
+                <button type="submit"
+                    class="bg-purple-700 hover:bg-purple-600 text-white px-12 py-2 rounded-md hover:cursor-pointer">
+                    ยืนยันการชำระเงิน
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+
+<script>
+    const image = document.getElementById('{{form.slip_image.id_for_label}}')
+    const preview = document.getElementById('preview')
+    image.addEventListener('change', () => {
+        const [file] = image.files
+        if (file) {
+            preview.src = URL.createObjectURL(file)
+            preview.classList.remove('hidden')
+        }
+    })
+</script>
+{% endblock %}

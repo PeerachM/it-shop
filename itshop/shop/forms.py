@@ -53,6 +53,15 @@ class AddressForm(ModelForm):
         if len(postal) != 5:
             raise forms.ValidationError("รหัสไปรษณีย์ต้องมี 5 หลัก")
         return postal
+    
+class PaymentForm(ModelForm):
+    class Meta:
+        model = Payment
+        fields = ["amount", "payment_date", "slip_image"]
+        widgets = {
+            "payment_date": DateTimeInput(attrs={"type": "datetime-local"}),
+            "slip_image": FileInput(attrs={"class": "hidden"})
+        }
 
 class ProductForm(ModelForm):
     class Meta:
