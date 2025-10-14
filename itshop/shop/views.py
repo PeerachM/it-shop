@@ -239,7 +239,13 @@ class WishlistView(PermissionRequiredMixin, View):
     permission_required = ["shop.view_customer", "shop.change_customer"]
     def get(self, request):
         customer = Customer.objects.get(user=request.user)
-        products = customer.wishlist.all()
+        products = customer.wishlist.all().annotate(
+            sale_price=Case(
+                When(discount_type="NONE", then=F("price")),
+                When(discount_type="PERCENT", then=(F("price") * (1 - F("discount_value") / 100))),
+                When(discount_type="FIXED", then=(F("price") - F("discount_value"))),
+            )
+        )
         context = {
             "products": products,
             "total": products.count()
@@ -355,7 +361,7 @@ class CheckoutView(PermissionRequiredMixin, View):
         addresses = Address.objects.filter(customer=customer)
 
         code = request.POST.get("discount_code", "").strip()
-        address_id = int(request.POST.get("address_id"))
+        address_id = int(request.POST.get("address_id", -1))
         discount_amount = 0
         discount_code = None
 
@@ -517,8 +523,7 @@ class PaymentView(PermissionRequiredMixin, View):
             payment.status = Payment.PaymentStatus.PENDING
             payment.save()
 
-            return redirect("product_list")
-            # return redirect("order_detail", order_id=order.id)
+            return redirect("order_detail", order.id)
         context = {
             "order": order,
             "form": form
@@ -536,13 +541,28 @@ class OrderListView(PermissionRequiredMixin, View):
         if status == "UNPAID":
             orders = orders.filter(payment__isnull=True).exclude(status="CANCELLED")
         elif status == "PENDING":
-            orders = orders.filter(payment__status="PENDING").exclude(status="CANCELLED")
+            orders = orders.filter(status="PENDING").exclude(payment__isnull=True)
         elif status != "ALL":
             orders = orders.filter(status=status)
         context = {
             "orders": orders,
         }
         return render(request, "customer_templates/order_list.html", context)
+
+
+# ORDER DETAIL
+class OrderDetailView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_order", "shop.add_payment"]
+    def get(self, request, id):
+        order = Order.objects.filter(id=id).annotate(final_price=F("total_price")-F("discount_amount")).first()
+        order_items = OrderItem.objects.filter(order=order).annotate(total=(F("unit_price")-F("discount_price"))*F("quantity"))
+        if order.customer != request.user.customer:
+            raise PermissionDenied()
+        context = {
+            "order": order,
+            "order_items": order_items
+        }
+        return render(request, "customer_templates/order_detail.html", context)
 
 
 
@@ -561,8 +581,29 @@ class AdminHomeView(PermissionRequiredMixin, View):
     def get(self, request):
         if not is_admin(request.user):
             raise PermissionDenied("Only for Admin.")
-        
-        return render(request, "admin_templates/home.html")
+        today = timezone.now().date()
+        sales_today = (
+            Order.objects.filter(order_date__date=today, payment__status=Payment.PaymentStatus.VERIFIED)
+            .annotate(final_price=F("total_price")-F("discount_amount"))
+            .aggregate(total=Sum("final_price"))
+            .get("total")
+        ) or 0
+        pending_orders_count = Order.objects.filter(status=Order.OrderStatus.PENDING).exclude(payment__isnull=True).count()
+        new_customers_today = Customer.objects.filter(user__date_joined__date=today).count()
+        low_stock_products = Product.objects.filter(stock__lte=5).count()
+
+
+        latest_orders = Order.objects.annotate(final_price=F("total_price")-F("discount_amount")).order_by("-order_date")[:5]
+        low_stock_list = Product.objects.filter(stock__lte=5).order_by("stock")[:5]
+        context = {
+            "sales_today": sales_today,
+            "pending_orders_count": pending_orders_count,
+            "new_customers_today": new_customers_today,
+            "low_stock_products": low_stock_products,
+            "latest_orders": latest_orders,
+            "low_stock_list": low_stock_list,
+        }
+        return render(request, "admin_templates/home.html", context)
 
 
 # PRODUCT (admin)
@@ -579,6 +620,13 @@ class ProductView(PermissionRequiredMixin, View):
                 When(discount_type="FIXED", then=(F("price") - F("discount_value"))),
             )
         )
+        status = request.GET.get("status", "ALL")
+        if status == "LOW":
+            products = products.filter(stock__lt=5)
+        elif status == "SALE":
+            products = products.filter(is_active=True)
+        elif status == "NOT_SALE":
+            products = products.filter(is_active=False)
         context = {"products": products}
         return render(request, "admin_templates/product_list.html", context)
 
@@ -783,3 +831,62 @@ class DeactivateCodeView(PermissionRequiredMixin, View):
         code.is_active = False;
         code.save()
         return redirect('code_edit', id=id)
+
+
+# ORDER (admin)
+class OrderView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_order", "shop.change_order"]
+    def get(self, request):
+        orders = Order.objects.annotate(final_price=F("total_price")-F("discount_amount")).order_by("-order_date")
+        status = request.GET.get("status", "ALL")
+        if status == "UNPAID":
+            orders = orders.filter(payment__isnull=True)
+        elif status == "ORDER_PENDING":
+            orders = orders.filter(status="PENDING")
+        elif status == "PAYMENT_PENDING":
+            orders = orders.filter(payment__status="PENDING")
+        elif status == "SHIPPING":
+            orders = orders.filter(status="SHIPPING")
+        context = {"orders": orders}
+        return render(request, "admin_templates/order_list.html", context)
+
+class AdminOrderDetailView(PermissionRequiredMixin, View):
+    permission_required = ["shop.view_order", "shop.change_order"]
+    def get(self, request, id):
+        order = Order.objects.filter(id=id).annotate(final_price=F("total_price")-F("discount_amount")).first()
+        order_items = OrderItem.objects.filter(order=order).annotate(total=(F("unit_price")-F("discount_price"))*F("quantity"))
+        context = {
+            "order": order,
+            "order_items": order_items
+        }
+        return render(request, "admin_templates/order_detail.html", context)
+
+class UpdateOrderStatusView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_order"]
+    def post(self, request, id):
+        status = request.POST.get("status")
+        order = Order.objects.get(id=id)
+        if status in Order.OrderStatus.values:
+            order.status=status
+            order.save()
+        return redirect("admin_order_detail", order.id)
+    
+class ConfirmPaymentView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_payment",]
+    def post(self, request, id):
+        payment = Payment.objects.get(id=id)
+        payment.status = Payment.PaymentStatus.VERIFIED
+        payment.save()
+        return redirect('admin_order_detail', payment.order.id)
+
+class RejectPaymentView(PermissionRequiredMixin, View):
+    permission_required = ["shop.change_payment",]
+    def post(self, request, id):
+        payment = Payment.objects.get(id=id)
+        order = payment.order
+        with transaction.atomic():
+            payment.status = Payment.PaymentStatus.REJECTED
+            order.status = Order.OrderStatus.CANCELLED
+            payment.save()
+            order.save()
+        return redirect('admin_order_detail', order.id)

@@ -1,0 +1,127 @@
+{% extends 'admin_templates/base.html' %}
+{% load humanize %}
+
+{% block title %}คำสั่งซื้อของลูกค้า - IT Shop{% endblock %}
+
+{% block order_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-file-invoice me-2"></i>
+    <span class="font-regular">คำสั่งซื้อ</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex justify-between items-center">
+    <h1 class="text-2xl ms-1 text-gray-600">คำสั่งซื้อของลูกค้า</h1>
+</div>
+<div class="flex gap-4 mt-4 border border-gray-200 rounded-md p-2 bg-white text-center">
+    <a href="{% url 'order' %}?status=ALL"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'ALL' or not request.GET.status %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        ทั้งหมด
+    </a>
+    <a href="{% url 'order' %}?status=UNPAID" 
+           class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'UNPAID' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+           ยังไม่ชำระ
+    </a>
+    <a href="{% url 'order' %}?status=PAYMENT_PENDING"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'PAYMENT_PENDING' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        รอการตรวจสอบการชำระ
+    </a>
+    <a href="{% url 'order' %}?status=ORDER_PENDING"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'ORDER_PENDING' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        รอดำเนินการ
+    </a>
+    <a href="{% url 'order' %}?status=SHIPPING"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'SHIPPING' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        กำลังจัดส่ง
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<table class="w-full">
+    <thead>
+        <tr class="border-b border-gray-300 text-sm text-left">
+            <th class="p-4">รหัสคำสั่งซื้อ</th>
+            <th class="p-4">ชื่อลูกค้า</th>
+            <th class="p-4">วันที่สั่งซื้อ</th>
+            <th class="p-4">ยอดรวม</th>
+            <th class="p-4">ส่วนลด</th>
+            <th class="p-4">ยอดสุทธิ</th>
+            <th class="p-4">สถานะคำสั่งซื้อ</th>
+            <th class="p-4">สถานะชำระเงิน</th>
+            <th class="p-4">จัดการ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr class="border-b border-gray-200 text-sm">
+            <td class="p-4 font-medium">#{{ order.id }}</td>
+            <td class="p-4">{{ order.customer.user.get_full_name }}</td>
+            <td class="p-4">{{ order.order_date|date:"d/m/Y H:i" }}</td>
+            <td class="p-4">฿{{ order.total_price|floatformat:-2|intcomma }}</td>
+            <td class="p-4">฿{{ order.discount_amount|floatformat:-2|intcomma }}</td>
+            <td class="p-4 text-purple-700 font-semibold">
+                ฿{{ order.final_price|floatformat:-2|intcomma }}
+            </td>
+            <td class="p-4">
+                {% if order.status == "PENDING" %}
+                <div
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-200 text-yellow-700 text-xs">
+                    <i class="fa-solid fa-hourglass-half"></i> รอดำเนินการ
+                </div>
+                {% elif order.status == "SHIPPING" %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-200 text-blue-700 text-xs">
+                    <i class="fa-solid fa-truck"></i> กำลังจัดส่ง
+                </div>
+                {% elif order.status == "DELIVERED" %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-200 text-green-700 text-xs">
+                    <i class="fa-solid fa-circle-check"></i> สำเร็จ
+                </div>
+                {% elif order.status == "CANCELLED" %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-200 text-red-700 text-xs">
+                    <i class="fa-solid fa-circle-xmark"></i> ยกเลิก
+                </div>
+                {% endif %}
+            </td>
+            <td class="p-4">
+                {% if not order.payment %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs">
+                    <i class="fa-solid fa-xmark"></i> ยังไม่ชำระเงิน
+                </div>
+                {% elif order.payment.status == "PENDING" %}
+                <div
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-200 text-yellow-700 text-xs">
+                    <i class="fa-solid fa-question"></i> รอการตรวจสอบ
+                </div>
+                {% elif order.payment.status == "VERIFIED" %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-200 text-green-700 text-xs">
+                    <i class="fa-solid fa-circle-check"></i> ได้รับการยืนยัน
+                </div>
+                {% elif order.payment.status == "REJECTED" %}
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-200 text-red-700 text-xs">
+                    <i class="fa-solid fa-circle-xmark"></i> ปฏิเสธ
+                </div>
+                {% endif %}
+            </td>
+            <td class="p-4">
+                <a href="{% url 'admin_order_detail' order.id %}">
+                    <button
+                        class="px-2 py-1 text-white bg-purple-700 hover:bg-purple-600/80 rounded-md text-sm hover:cursor-pointer">
+                        <i class="fa-solid fa-eye"></i>
+                        ตรวจสอบ
+                    </button>
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center text-gray-500 py-4">
+                ยังไม่มีคำสั่งซื้อ
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

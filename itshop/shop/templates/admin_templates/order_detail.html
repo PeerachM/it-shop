@@ -1,0 +1,224 @@
+{% extends 'admin_templates/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %} รายละเอียดคำสั่งซื้อ - IT Shop {% endblock %}
+
+{% block order_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-file-invoice me-2"></i>
+    <span class="font-regular">คำสั่งซื้อ</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex items-center gap-1">
+    <a href="{% url 'order' %}">
+        <button type="button"
+            class="border border-gray-300 hover:bg-gray-100 text-gray-400 bg-white rounded-md hover:cursor-pointer px-1">
+            <i class="fa-solid fa-angle-left text-sm"></i>
+        </button>
+    </a>
+    <h1 class="text-2xl ms-1 text-gray-600">รายการคำสั่งซื้อ #{{ order.id }}</h1>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="px-12 py-10">
+    <div class="flex flex-col items-center justify-center py-2">
+        <div class="grid grid-cols-3 gap-6 w-full">
+            <div class="col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-gray-700 font-medium">รหัสคำสั่งซื้อ: {{ order.id }}</p>
+                    <div class="flex items-center">
+                        <p class="text-gray-700 font-medium me-2">สถานะการจัดส่ง:</p>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium
+                            {% if order.status == 'PENDING' %} bg-yellow-200 text-yellow-800
+                            {% elif order.status == 'SHIPPING' %} bg-blue-200 text-blue-800
+                            {% elif order.status == 'DELIVERED' %} bg-green-200 text-green-800
+                            {% elif order.status == 'CANCELLED' %} bg-red-200 text-red-800
+                            {% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                        <button onclick="openModal()"
+                            class=" text-xs p-1 border border-gray-200  rounded-xl hover:bg-gray-100 cursor-pointer">
+                            <i class="fa-solid fa-pen text-gray-800"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="border border-gray-200 rounded-md p-2">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 text-gray-700">
+                                <th class="p-2 text-left">สินค้า</th>
+                                <th class="p-2 text-left">ราคา/ชิ้น</th>
+                                <th class="p-2 text-left">ส่วนลด/ชิ้น</th>
+                                <th class="p-2 text-left">จำนวน</th>
+                                <th class="p-2 text-left">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                            <tr class="border-b border-gray-200">
+                                <td class="p-2 flex items-center gap-4">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" class="w-16 h-16 object-cover rounded-md">
+                                    {% else %}
+                                        <img src="{% static 'img/no_img.jpeg' %}" class="w-16 h-16 object-cover rounded-md">
+                                    {% endif %}
+                                    {% if item.product.is_active %}
+                                    <a href="{% url 'product_detail' item.product.id %}">
+                                        <p>{{ item.product.name|truncatechars:20 }}</p>
+                                    </a>
+                                    {% else %}
+                                    <p>{{ item.product.name|truncatechars:20 }}</p>
+                                    {% endif %}
+                                </td>
+                                <td class="p-2">฿{{ item.unit_price|floatformat:2|intcomma }}</td>
+                                <td class="p-2">฿{{ item.discount_price|floatformat:2|intcomma }}</td>
+                                <td class="p-2">{{ item.quantity }}</td>
+                                <td class="p-2">฿{{ item.total|floatformat:2|intcomma }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+
+                <!-- ราคารวม -->
+                <div class="mt-4 border border-gray-200 rounded-md p-4 bg-white">
+                    <p class="flex justify-between"><span>ราคาสินค้ารวม</span><span>฿{{ order.total_price|floatformat:2|intcomma }}</span></p>
+
+                    {% if order.discount_code %}
+                    <p class="flex justify-between">
+                        <span>โค้ดส่วนลด</span>
+                        <span class="bg-gray-200 rounded-md px-2 py-[2px] text-xs">{{ order.discount_code.code }}</span>
+                    </p>
+                    {% endif %}
+
+                    <p class="flex justify-between border-b border-gray-200 pb-3">
+                        <span>ส่วนลด</span><span>฿{{ order.discount_amount|floatformat:2|intcomma }}</span>
+                    </p>
+
+                    <p class="flex justify-between font-bold text-purple-600 mt-3">
+                        <span>ยอดสุทธิ</span>
+                        <span>฿{{ order.final_price|floatformat:2|intcomma }}</span>
+                    </p>
+                </div>
+
+
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="border border-gray-200 rounded-md p-4 bg-white">
+                        <p class="font-medium mb-2">ที่อยู่จัดส่ง</p>
+                        <p class="text-sm text-gray-700 break-words">{{ order.shipping_address }}</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-md p-4 flex items-center gap-3 bg-white">
+                        {% if order.customer.image %}
+                        <img src="{{order.customer.image.url}}" alt="Profile"
+                            class="w-12 h-12 rounded-full object-cover border border-gray-300 hover:cursor-pointer hover:border-purple-600">
+                        {% else %}
+                        <img src="{% static 'img/user_default_img.png' %}" alt="Profile"
+                            class="w-12 h-12 rounded-full object-cover border border-gray-300 hover:cursor-pointer hover:border-purple-600">
+                        {% endif %}
+                        <div>
+                            <p class="font-medium">{{order.customer.user.first_name}} {{order.customer.user.last_name}}</p>
+                            <p class="text-sm text-gray-600">เบอร์ {{order.customer.phone}}</p>
+                            <p class="text-sm text-gray-600">อีเมล {{order.customer.user.email}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-md p-4 bg-white">
+                <p class="text-gray-700 font-medium mb-2">รายละเอียดการชำระเงิน</p>
+                {% if order.payment %}
+                    <p class="text-sm text-gray-700 mb-2">สถานะ:
+                        <span class="px-2 py-1 ms-1 text-xs rounded-full
+                            {% if order.payment.status == 'PENDING' %} bg-yellow-200 text-yellow-700
+                            {% elif order.payment.status == 'VERIFIED' %} bg-green-200 text-green-700
+                            {% elif order.payment.status == 'REJECTED' %} bg-red-200 text-red-700
+                            {% endif %}
+                        ">{{ order.payment.get_status_display }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mb-2">เลขที่การชำระ: {{ order.payment.id }}</p>
+                    <p class="text-sm text-gray-700 mb-2">ชำระวันที่: {{ order.payment.payment_date|date:"d/m/Y H:i" }}</p>
+                    <p class="text-sm text-gray-700 mb-2">ยอดชำระ: ฿{{ order.payment.amount|floatformat:2|intcomma }}</p>
+
+                    <p class="text-sm text-gray-700 mb-2 mt-3 font-medium">หลักฐานการชำระเงิน:</p>
+                    <div class="flex justify-center">
+                        <img src="{{ order.payment.slip_image.url }}" alt="Slip" class="w-72 object-cover rounded-md">
+                    </div>
+                    <div class="flex gap-4 mt-4 w-full justify-center">
+                    {% if order.payment.status == "PENDING" %}
+                    <form action="{% url 'confirm_payment' order.payment.id %}" method="post" onsubmit="return confirm('ต้องการยืนการชำระเงินนี้หรือไม่?');">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="bg-green-500 text-gray-50 px-4 py-2 rounded-md hover:bg-green-600 text-sm cursor-pointer">
+                            ยืนยันการชำระ
+                        </button>
+                    </form>
+                    <form action="{% url 'reject_payment' order.payment.id %}" method="post" onsubmit="return confirm('ต้องการปฏิเสธการชำระเงินนี้หรือไม่?');">
+                        {% csrf_token %}
+                        <button
+                            class="bg-red-500 text-gray-50 px-4 py-2 rounded-md hover:bg-red-600 text-sm cursor-pointer">
+                            ปฏิเสธการชำระ
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% else %}
+                    <div class="p-4 border border-dashed border-gray-300 rounded-md text-center">
+                        <p class="text-gray-600">ยังไม่มีข้อมูลการชำระเงิน</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="statusModal" class="fixed inset-0 bg-black/20 hidden z-50 items-center justify-center">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-80 border-1 border-gray-200">
+                <h2 class="text-lg font-semibold mb-4">แก้ไขสถานะการจัดส่ง</h2>
+                <form action="{% url 'update_order_status' order.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="my-5 ">
+                        <label for="status" class="block text-sm font-medium mb-1">เลือกสถานะ</label>
+                        <select id="status" name="status"
+                            class="w-full border border-gray-200 rounded-md p-2 mb-4">
+                            <option value="PENDING" {% if order.status == "PENDING"%} selected {% endif %}>รอดำเนินการ</option>
+                            <option value="SHIPPING" {% if order.status == "SHIPPING"%} selected {% endif %}>กำลังจัดส่ง</option>
+                            <option value="DELIVERED" {% if order.status == "DELIVERED"%} selected {% endif %}>จัดส่งสำเร็จ</option>
+                            <option value="CANCELLED" {% if order.status == "CANCELLED"%} selected {% endif %}>ยกเลิกคำสั่งซื้อ</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button onclick="closeModal()"
+                            class="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 cursor-pointer">
+                            ยกเลิก
+                        </button>
+                        <button type="submit"
+                            class="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer">
+                            บันทึก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+    {% block script %}
+    <script>
+        function openModal() {
+            document.getElementById('statusModal').classList.remove('hidden');
+            document.getElementById('statusModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            document.getElementById('statusModal').classList.remove('flex');
+        }
+    </script>
+    {% endblock %}

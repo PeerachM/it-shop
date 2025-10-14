@@ -71,6 +71,37 @@ class ProductForm(ModelForm):
             "description": Textarea(attrs={"rows": 3}),
             "image": FileInput(attrs={"class": "hidden"})
         }
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+        if len(name) < 3:
+            raise ValidationError("ชื่อสินค้าต้องมีอย่างน้อย 3 ตัวอักษร")
+        return name
+    def clean_price(self):
+        price = self.cleaned_data.get("price")
+        if price <= 0:
+            raise ValidationError("ราคาสินค้าต้องมากกว่า 0 บาท")
+        return price
+    def clean_stock(self):
+        stock = self.cleaned_data.get("stock")
+        if stock and stock < 0:
+            raise ValidationError("จำนวนสต็อกต้องไม่ติดลบ")
+        return stock
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get("discount_value")
+        discount_type = self.cleaned_data.get("discount_type")
+        price = self.cleaned_data.get("price")
+
+        if discount_value and discount_value < 0:
+            raise ValidationError("ส่วนลดต้องไม่ติดลบ")
+        if discount_type != Product.DiscountType.NONE and discount_value <= 0:
+            raise ValidationError("ส่วนลดต้องมากกว่า 0")
+        if discount_type == Product.DiscountType.PERCENT:
+            if discount_value > 100:
+                raise ValidationError("ส่วนลดแบบเปอร์เซ็นต์ต้องไม่เกิน 100%")
+        elif discount_type == Product.DiscountType.FIXED:
+            if price is not None and discount_value > price:
+                raise ValidationError("ส่วนลดต้องน้อยกว่าราคาสินค้า")
+        return discount_value
 
 class CategoryForm(ModelForm):
     class Meta:

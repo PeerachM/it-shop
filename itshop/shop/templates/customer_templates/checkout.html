@@ -6,11 +6,17 @@
 
 {% block content %}
 <div class="flex justify-center py-12 px-6">
-    <div class="max-w-5xl w-full flex flex-col gap-8">
-
+    <div class="max-w-5xl w-full flex flex-col gap-4">
+        <div class="flex items-center px-8 py-4 bg-white rounded-md border border-gray-200">
+            <p class="text-xl text-gray-800 flex items-center gap-2">
+                <span class="text-base text-gray-700 flex items-center">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </span>
+                สรุปคำสั่งซื้อ
+            </p>
+        </div>
         <!-- cart item -->
-        <div class="bg-white p-12 rounded-md border border-gray-200">
-            <h1 class="text-2xl font-semibold mb-6">สรุปคำสั่งซื้อ</h1>
+        <div class="bg-white p-8 rounded-md border border-gray-200">
 
             {% if cart_items %}
             <table class="w-full text-left border-collapse">
@@ -49,7 +55,7 @@
             <p class="text-gray-500 text-center mt-12">ไม่มีสินค้าในตะกร้า</p>
             {% endif %}
         </div>
-        <form method="POST" class="bg-white p-12 rounded-md border border-gray-200">
+        <form method="POST" class="bg-white p-8 rounded-md border border-gray-200">
             {% csrf_token %}
 
             <!-- code -->

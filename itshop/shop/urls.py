@@ -31,6 +31,7 @@ urlpatterns = [
     path("payment/<int:id>", views.PaymentView.as_view(), name="payment"),
 
     path("order/", views.OrderListView.as_view(), name="order_list"),
+    path("order/<int:id>", views.OrderDetailView.as_view(), name="order_detail"),
 
 
 
@@ -59,4 +60,11 @@ urlpatterns = [
     path("management/code/<int:id>/edit/", views.EditCodeView.as_view(), name="code_edit"),
     path("management/code/<int:id>/activate/", views.ActivateCodeView.as_view(), name="code_activate"),
     path("management/code/<int:id>/deactivate/", views.DeactivateCodeView.as_view(), name="code_deactivate"),
+    
+    path("management/order/", views.OrderView.as_view(), name="order"),
+    path("management/order/<int:id>", views.AdminOrderDetailView.as_view(), name="admin_order_detail"),
+    path("management/order/<int:id>/update_status", views.UpdateOrderStatusView.as_view(), name="update_order_status"),
+
+    path("management/payment/<int:id>/confirm", views.ConfirmPaymentView.as_view(), name="confirm_payment"),
+    path("management/payment/<int:id>/reject", views.RejectPaymentView.as_view(), name="reject_payment"),
 ]

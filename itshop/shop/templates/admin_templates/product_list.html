@@ -23,6 +23,24 @@
         </button>
     </a>
 </div>
+<div class="flex gap-4 mt-4 border border-gray-200 rounded-md p-2 bg-white text-center">
+    <a href="{% url 'product' %}?status=ALL"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'ALL' or not request.GET.status %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        ทั้งหมด
+    </a>
+    <a href="{% url 'product' %}?status=LOW" 
+           class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'LOW' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+           คงเหลือต่ำ
+    </a>
+    <a href="{% url 'product' %}?status=SALE"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'SALE' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        วางขาย
+    </a>
+    <a href="{% url 'product' %}?status=NOT_SALE"
+        class="px-2 py-2 rounded-md text-sm font-medium {% if request.GET.status == 'NOT_SALE' %}bg-purple-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        ปิดขาย
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}

@@ -1,0 +1,162 @@
+{% extends 'admin_templates/base.html' %}
+{% load humanize %}
+
+{% block title %}หน้าหลัก - IT Shop{% endblock %}
+
+{% block home_button %}
+<button
+    class="w-full p-3 ps-4 rounded-md text-left text-white bg-gradient-to-bl from-purple-400 to-purple-900 hover:to-purple-500 hover:cursor-pointer">
+    <i class="fa-solid fa-house me-2"></i>
+    <span class="font-regular">หน้าหลัก</span>
+</button>
+{% endblock %}
+
+{% block head %}
+<div class="flex justify-between items-center">
+    <h1 class="text-2xl ms-1 text-gray-600">หน้าหลัก</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex justify-center py-2">
+    <div class="flex flex-col items-center justify-center w-full p-8 py-5">
+        <div class="flex justify-between w-9/10 gap-8 my-7">
+            <div class="w-1/4 p-5 bg-green-100 text-center rounded-xl">
+                <p class="mt-1">ยอดขายวันนี้</p>
+                <h1 class="text-5xl my-5 pt-1 font-bold text-green-500">
+                    {{ sales_today|floatformat:0|intcomma }}฿
+                </h1>
+            </div>
+            <div class="w-1/5 p-5 bg-blue-100 text-center rounded-xl">
+                <p class="mt-1">คำสั่งซื้อที่รอดำเนินการ</p>
+                <h1 class="text-6xl my-5 font-bold text-blue-500">
+                    {{ pending_orders_count }}
+                </h1>
+            </div>
+            <div class="w-1/5 p-5 bg-purple-100 text-center rounded-xl">
+                <p class="mt-1">ลูกค้าใหม่วันนี้</p>
+                <h1 class="text-6xl my-5 font-bold text-purple-500">
+                    {{ new_customers_today }}
+                </h1>
+            </div>
+            <div class="w-1/5 p-5 bg-yellow-100 text-center rounded-xl">
+                <p class="mt-1">สินค้าคงคลังต่ำ</p>
+                <h1 class="text-6xl my-5 font-bold text-yellow-500">
+                    {{ low_stock_products }}
+                </h1>
+            </div>
+        </div>
+
+        <div class="w-19/20 my-7">
+            <h1 class="text-2xl my-4 px-1">คำสั่งซื้อล่าสุด</h1>
+            <div class="p-2 border border-gray-200 rounded-md">
+                <table class="w-full bg-white">
+                    <thead class="text-black">
+                        <tr>
+                            <th class="py-3 px-6 text-left">เลขคำสั่งซื้อ</th>
+                            <th class="py-3 px-6 text-left">ชื่อลูกค้า</th>
+                            <th class="py-3 px-6 text-left">ยอดสุทธิ</th>
+                            <th class="py-3 px-6 text-left">วันที่ทำการสั่งซื้อ</th>
+                            <th class="py-3 px-6 text-left">สถานะการชำระเงิน</th>
+                            <th class="py-3 px-6 text-left">สถานะคำสั่งซื้อ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in latest_orders %}
+                        <tr class="border-t border-gray-200">
+                            <td class="py-3 px-6">#{{ order.id }}</td>
+                            <td class="py-3 px-6">{{ order.customer.user.get_full_name }}</td>
+                            <td class="py-3 px-6">฿{{ order.final_price|floatformat:-2|intcomma }}</td>
+                            <td class="py-3 px-6">{{ order.order_date|date:"d/m/Y H:i" }}</td>
+                            <td class="py-2 px-4">
+                                {% if not order.payment %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs">
+                                    <i class="fa-solid fa-xmark"></i> ยังไม่ชำระเงิน
+                                </div>
+                                {% elif order.payment.status == "PENDING" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-200 text-yellow-700 text-xs">
+                                    <i class="fa-solid fa-question"></i> รอการตรวจสอบ
+                                </div>
+                                {% elif order.payment.status == "VERIFIED" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-200 text-green-700 text-xs">
+                                    <i class="fa-solid fa-circle-check"></i> ได้รับการยืนยัน
+                                </div>
+                                {% elif order.payment.status == "REJECTED" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-200 text-red-700 text-xs">
+                                    <i class="fa-solid fa-circle-xmark"></i> ปฏิเสธ
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="py-2 px-4 rounded-br-lg">
+                                {% if order.status == "PENDING" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-200 text-yellow-700 text-xs">
+                                    <i class="fa-solid fa-hourglass-half"></i> รอดำเนินการ
+                                </div>
+                                {% elif order.status == "SHIPPING" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-200 text-blue-700 text-xs">
+                                    <i class="fa-solid fa-truck"></i> กำลังจัดส่ง
+                                </div>
+                                {% elif order.status == "DELIVERED" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-200 text-green-700 text-xs">
+                                    <i class="fa-solid fa-circle-check"></i> สำเร็จ
+                                </div>
+                                {% elif order.status == "CANCELLED" %}
+                                <div
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-200 text-red-700 text-xs">
+                                    <i class="fa-solid fa-circle-xmark"></i> ยกเลิก
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="w-19/20 my-6">
+            <h1 class="text-2xl my-4 px-1">สินค้าคงคลังต่ำ</h1>
+            <div class="p-2 border border-gray-200 rounded-md">
+                <table class="w-full bg-white">
+                    <thead class="text-black">
+                        <tr>
+                            <th class="py-3 px-6 text-left">เลขสินค้า</th>
+                            <th class="py-3 px-6 text-left">ชื่อสินค้า</th>
+                            <th class="py-3 px-6 text-left">คงเหลือ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in low_stock_list %}
+                        <tr class="border-t border-gray-200">
+                            <td class="py-3 px-6">#{{ product.id }}</td>
+                            <td class="py-3 px-6">{{ product.name }}</td>
+                            <td class="py-2 px-4">
+                                {% if product.stock == 0 %}
+                                <span class="bg-red-200 text-red-800 py-1 px-4 rounded-full text-sm">0</span>
+                                {% elif product.stock <= 3 %} 
+                                <span
+                                    class="bg-yellow-200 text-yellow-800 py-1 px-4 rounded-full text-sm">
+                                    {{ product.stock }}
+                                </span>
+                                {% else %}
+                                <span class="bg-gray-200 text-gray-800 py-1 px-4 rounded-full text-sm">
+                                    {{ product.stock }}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
